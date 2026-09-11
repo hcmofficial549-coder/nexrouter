@@ -1,61 +1,18 @@
-﻿# 🚀 nexrouter
+# 🌳 nexrouter
 
-**High-performance HTTP router for Go with zero allocation on hot path**
+Custom high-performance HTTP router for Go — built from scratch, production-deployed.
+
+**Live API:** https://nexrouter.up.railway.app
+**Stack:** Go 1.21 · SQLite (modernc, pure-Go) · JWT · Docker · Railway
 
 ## ✨ Features
-
-- 🌳 Radix Tree Routing — O(k) lookup, zero allocation
-- ⚙️ Middleware Chain — Composable with Next() support
-- 📁 Route Groups — Shared prefix & middleware
-- 🛡️ Panic Recovery — Automatic recovery from panics
-- 🌐 CORS — Production-ready CORS middleware
-- 🚦 Rate Limiting — Token bucket algorithm
-- 🔐 JWT Authentication — Built-in JWT middleware
-- 📝 Request Logger — Structured logging
-
-## 📦 Installation
-
-`ash
-go get github.com/nexrouter/nexrouter
-`
+- 🌳 Radix-style route matching with `:param` support
+- ⚙️ Middleware chain (Logger, Recovery, CORS)
+- 🗄️ SQLite persistent storage via Docker volume
+- 🔐 JWT authentication (bcrypt + HMAC-SHA256, 24h expiry)
+- 🛡️ Public read / protected write route separation
+- 🐳 Multi-stage Docker build with health checks
+- ☁️ One-push auto-deploy (GitHub → Railway)
 
 ## 🚀 Quick Start
-
-`go
-package main
-
-import (
-    "net/http"
-    "github.com/nexrouter/nexrouter/core"
-    "github.com/nexrouter/nexrouter/middleware"
-)
-
-func main() {
-    r := core.New()
-    
-    r.Use(middleware.Logger())
-    r.Use(middleware.Recovery())
-    
-    r.GET("/", func(c *core.Context) {
-        c.JSON(http.StatusOK, core.H{
-            "message": "Hello, World!",
-        })
-    })
-    
-    r.Run(":8080")
-}
-`
-
-## 📊 Benchmarks
-
-| Router | ns/op | allocs/op |
-|--------|-------|-----------|
-| nexrouter | 87 | 0 |
-| httprouter | 64 | 0 |
-| Fiber | 78 | 0 |
-| Gin | 120 | 2 |
-
-## 📄 License
-
-MIT © nexrouter contributors
 

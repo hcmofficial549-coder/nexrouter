@@ -44,14 +44,18 @@ r.Use(middleware.Recovery())
 r.Use(middleware.Logger())
 r.Use(middleware.CORS())
 
+	registerDashboard(r)
+	r.Use(middleware.Security())
+	r.Use(middleware.RateLimit(60, time.Minute))
+
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "version": "1.3.0", "database": "sqlite", "auth": "jwt"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "version": "1.4.0", "database": "sqlite", "auth": "jwt"})
 })
 
 r.GET("/", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
 "message": "Welcome to nexrouter!",
-"version": "1.3.0",
+"version": "1.4.0",
 "demo_login": core.H{"email": "john@example.com", "password": "password123"},
 })
 })
