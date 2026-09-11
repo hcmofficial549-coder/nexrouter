@@ -1,17 +1,19 @@
 ﻿# 🚀 nexrouter
 
-**High-performance HTTP router for Go with zero allocation on hot path**
+**Custom high-performance HTTP router for Go — built from scratch, production-deployed**
+
+**Live API:** https://URL-ANDA.up.railway.app
+**Stack:** Go 1.21 · SQLite (modernc, pure-Go) · JWT · Docker · Railway
 
 ## ✨ Features
 
-- 🌳 Radix Tree Routing — O(k) lookup, zero allocation
-- ⚙️ Middleware Chain — Composable with Next() support
-- 📁 Route Groups — Shared prefix & middleware
-- 🛡️ Panic Recovery — Automatic recovery from panics
-- 🌐 CORS — Production-ready CORS middleware
-- 🚦 Rate Limiting — Token bucket algorithm
-- 🔐 JWT Authentication — Built-in JWT middleware
-- 📝 Request Logger — Structured logging
+- 🌳 Radix-style route matching with `:param` support
+- ⚙️ Middleware chain (Logger, Recovery, CORS)
+- 🗄️ SQLite persistent storage via Docker volume
+- 🔐 JWT authentication (bcrypt + HMAC-SHA256, 24h expiry)
+- 🛡️ Public read / protected write route separation
+- 🐳 Multi-stage Docker build with health checks
+- ☁️ One-push auto-deploy (GitHub → Railway)
 
 ## 📦 Installation
 
