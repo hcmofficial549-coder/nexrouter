@@ -12,6 +12,7 @@ import (
 "github.com/nexrouter/nexrouter/cache"
 "github.com/nexrouter/nexrouter/core"
 "github.com/nexrouter/nexrouter/database"
+	"github.com/nexrouter/nexrouter/docs"
 	"github.com/nexrouter/nexrouter/events"
 "github.com/nexrouter/nexrouter/middleware"
 )
@@ -62,7 +63,7 @@ registerDashboard(r)
 r.GET("/health", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
 "status":   "ok",
-"version":  "1.6.0",
+"version":  "1.7.0",
 "database": "sqlite",
 "auth":     "jwt",
 "cache":    appCache.Name(),
@@ -72,7 +73,7 @@ c.JSON(http.StatusOK, core.H{
 r.GET("/", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
 "message":    "Welcome to nexrouter!",
-"version":    "1.6.0",
+"version":    "1.7.0",
 "new":        "caching layer with X-Cache headers (HIT/MISS)",
 "dashboard":  "/dashboard",
 "demo_login": core.H{"email": "john@example.com", "password": "password123"},
@@ -89,6 +90,8 @@ api.GET("/products/:id", getProduct)
 api.GET("/cache/stats", cacheStatsHandler)
 	api.GET("/events/stream", eventsStreamHandler)
 	r.GET("/monitor", monitorHandler)
+	r.GET("/docs", docsHandler)
+	r.GET("/openapi.json", openAPISpecHandler)
 
 prot := r.Group("/api/v1")
 prot.Use(auth.JWT(jwtSecret))
@@ -111,7 +114,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8080"
 }
-log.Printf("[nexrouter] v1.6.0 (SQLite + JWT + Cache) starting on :%s", port)
+log.Printf("[nexrouter] v1.7.0 (SQLite + JWT + Cache) starting on :%s", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
