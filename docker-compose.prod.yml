@@ -1,0 +1,111 @@
+﻿services:
+  # Load Balancer / Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: nexrouter-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - nexrouter-1
+      - nexrouter-2
+      - nexrouter-3
+    restart: always
+    networks:
+      - nexrouter-network
+
+  # Application instances (3 replicas)
+  nexrouter-1:
+    build: .
+    container_name: nexrouter-1
+    expose:
+      - "8080"
+    environment:
+      - PORT=8080
+      - ENV=production
+      - INSTANCE_ID=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+    networks:
+      - nexrouter-network
+
+  nexrouter-2:
+    build: .
+    container_name: nexrouter-2
+    expose:
+      - "8080"
+    environment:
+      - PORT=8080
+      - ENV=production
+      - INSTANCE_ID=2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nexrouter-network
+
+  nexrouter-3:
+    build: .
+    container_name: nexrouter-3
+    expose:
+      - "8080"
+    environment:
+      - PORT=8080
+      - ENV=production
+      - INSTANCE_ID=3
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nexrouter-network
+
+  # Database (with replica)
+  db:
+    image: postgres:16-alpine
+    container_name: nexrouter-db
+    environment:
+      POSTGRES_USER: nexrouter
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: nexrouter
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - nexrouter-network
+
+  # Redis Cluster
+  cache:
+    image: redis:7-alpine
+    container_name: nexrouter-cache
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    restart: always
+    networks:
+      - nexrouter-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  nexrouter-network:
+    driver: bridge

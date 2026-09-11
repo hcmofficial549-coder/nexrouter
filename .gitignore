@@ -1,0 +1,14 @@
+﻿bin/
+*.exe
+*.dll
+*.so
+*.dylib
+nexrouter
+*.test
+coverage.out
+.idea/
+.vscode/
+*.swp
+.DS_Store
+.env
+.env.local

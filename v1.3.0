@@ -1,0 +1,4 @@
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Go tidak ditemukan di PATH!" -ForegroundColor Red
+    exit 1
+}

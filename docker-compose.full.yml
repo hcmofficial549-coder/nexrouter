@@ -1,0 +1,104 @@
+﻿services:
+  # Main application
+  nexrouter:
+    build: .
+    container_name: nexrouter
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - ENV=production
+      - LOG_LEVEL=info
+      - DATABASE_URL=postgres://nexrouter:nexrouter123@db:5432/nexrouter?sslmode=disable
+      - REDIS_URL=redis://cache:6379
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexrouter-network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: nexrouter-db
+    environment:
+      POSTGRES_USER: nexrouter
+      POSTGRES_PASSWORD: nexrouter123
+      POSTGRES_DB: nexrouter
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexrouter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexrouter-network
+
+  # Redis Cache
+  cache:
+    image: redis:7-alpine
+    container_name: nexrouter-cache
+    command: redis-server --appendonly yes --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexrouter-network
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nexrouter-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - nexrouter-network
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nexrouter-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - nexrouter-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  nexrouter-network:
+    driver: bridge
