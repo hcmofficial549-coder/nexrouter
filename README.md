@@ -2,7 +2,7 @@
 
 **Custom high-performance HTTP router for Go — built from scratch, production-deployed**
 
-**Live API:** https://URL-ANDA.up.railway.app
+**Live API:** https://nexrouter.up.railway.app
 **Stack:** Go 1.21 · SQLite (modernc, pure-Go) · JWT · Docker · Railway
 
 ## ✨ Features
