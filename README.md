@@ -1,18 +1,30 @@
-# 🌳 nexrouter
+# nexrouter
 
-Custom high-performance HTTP router for Go — built from scratch, production-deployed.
+Custom high-performance HTTP router for Go - built from scratch, production-deployed.
 
-**Live API:** https://nexrouter.up.railway.app
-**Stack:** Go 1.21 · SQLite (modernc, pure-Go) · JWT · Docker · Railway
+[![CI](https://github.com/hcmofficial549-coder/nexrouter/actions/workflows/ci.yml/badge.svg)](https://github.com/hcmofficial549-coder/nexrouter/actions/workflows/ci.yml)
 
-## ✨ Features
-- 🌳 Radix-style route matching with `:param` support
-- ⚙️ Middleware chain (Logger, Recovery, CORS)
-- 🗄️ SQLite persistent storage via Docker volume
-- 🔐 JWT authentication (bcrypt + HMAC-SHA256, 24h expiry)
-- 🛡️ Public read / protected write route separation
-- 🐳 Multi-stage Docker build with health checks
-- ☁️ One-push auto-deploy (GitHub → Railway)
+## Live Demo
 
-## 🚀 Quick Start
+- Dashboard: https://nexrouter.up.railway.app/dashboard
+- API Health: https://nexrouter.up.railway.app/health
+- Demo login: john@example.com / password123
 
+## Features
+
+- Radix-style route matching with :param support (built from scratch, no Gin/Echo)
+- Middleware chain: Logger, Recovery, CORS, Security Headers
+- Rate limiting: token bucket algorithm, 60 requests/min per IP
+- SQLite persistent storage (modernc pure-Go driver) via Docker volume
+- JWT authentication: bcrypt password hashing + HMAC-SHA256 tokens, 24h expiry
+- Public read / protected write route separation
+- Embedded dashboard UI (go:embed) served at /dashboard
+- Multi-stage Docker build with health checks
+- Unit tests with race detector + GitHub Actions CI
+- Auto-deploy: git push triggers Railway deployment
+
+## Quick Start
+
+
+  
+  

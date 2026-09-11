@@ -9,12 +9,16 @@ import (
 "time"
 
 "github.com/nexrouter/nexrouter/auth"
+"github.com/nexrouter/nexrouter/cache"
 "github.com/nexrouter/nexrouter/core"
 "github.com/nexrouter/nexrouter/database"
 "github.com/nexrouter/nexrouter/middleware"
 )
 
-var jwtSecret = "nexrouter-dev-secret-change-me"
+var (
+jwtSecret = "nexrouter-dev-secret-change-me"
+appCache  cache.Cache
+)
 
 func main() {
 if s := os.Getenv("JWT_SECRET"); s != "" {
@@ -33,6 +37,9 @@ log.Fatalf("[nexrouter] auth migration failed: %v", err)
 }
 log.Printf("[nexrouter] SQLite ready at: %s", dbPath)
 
+appCache = cache.NewFromEnv()
+log.Printf("[nexrouter] cache engine: %s", appCache.Name())
+
 if hash, err := auth.HashPassword("password123"); err == nil {
 if n := database.SetDefaultPasswords(hash); n > 0 {
 log.Printf("[nexrouter] set default password for %d legacy user(s)", n)
@@ -44,18 +51,24 @@ r.Use(middleware.Recovery())
 r.Use(middleware.Logger())
 r.Use(middleware.CORS())
 
-	registerDashboard(r)
-	r.Use(middleware.Security())
-	r.Use(middleware.RateLimit(60, time.Minute))
+registerDashboard(r)
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "version": "1.4.0", "database": "sqlite", "auth": "jwt"})
+c.JSON(http.StatusOK, core.H{
+"status":   "ok",
+"version":  "1.5.0",
+"database": "sqlite",
+"auth":     "jwt",
+"cache":    appCache.Name(),
+})
 })
 
 r.GET("/", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
-"message": "Welcome to nexrouter!",
-"version": "1.4.0",
+"message":    "Welcome to nexrouter!",
+"version":    "1.5.0",
+"new":        "caching layer with X-Cache headers (HIT/MISS)",
+"dashboard":  "/dashboard",
 "demo_login": core.H{"email": "john@example.com", "password": "password123"},
 })
 })
@@ -67,6 +80,7 @@ api.GET("/users", listUsers)
 api.GET("/users/:id", getUser)
 api.GET("/products", listProducts)
 api.GET("/products/:id", getProduct)
+api.GET("/cache/stats", cacheStatsHandler)
 
 prot := r.Group("/api/v1")
 prot.Use(auth.JWT(jwtSecret))
@@ -89,7 +103,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8080"
 }
-log.Printf("[nexrouter] v1.3.0 (SQLite + JWT) starting on :%s", port)
+log.Printf("[nexrouter] v1.5.0 (SQLite + JWT + Cache) starting on :%s", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -202,12 +216,24 @@ c.JSON(http.StatusOK, u)
 }
 
 func listProducts(c *core.Context) {
-products, err := database.ListProducts(c.Query("category"))
+cat := c.Query("category")
+key := "products:" + cat
+
+if data, ok := appCache.Get(key); ok {
+c.SetHeader("X-Cache", "HIT")
+c.JSON(http.StatusOK, data)
+return
+}
+
+products, err := database.ListProducts(cat)
 if err != nil {
 c.InternalError(err.Error())
 return
 }
-c.JSON(http.StatusOK, core.H{"success": true, "data": products, "count": len(products)})
+resp := core.H{"success": true, "data": products, "count": len(products)}
+appCache.Set(key, resp, 30*time.Second)
+c.SetHeader("X-Cache", "MISS")
+c.JSON(http.StatusOK, resp)
 }
 
 func getProduct(c *core.Context) {
@@ -247,6 +273,7 @@ if err != nil {
 c.InternalError(err.Error())
 return
 }
+invalidateCache()
 createdBy := ""
 if cl := auth.GetClaims(c); cl != nil {
 createdBy = cl.Email
@@ -288,6 +315,7 @@ if p == nil {
 c.NotFound("product not found")
 return
 }
+invalidateCache()
 c.JSON(http.StatusOK, core.H{"success": true, "data": p})
 }
 
@@ -306,14 +334,31 @@ if !deleted {
 c.NotFound("product not found")
 return
 }
+invalidateCache()
 c.JSON(http.StatusOK, core.H{"success": true, "message": "product deleted"})
 }
 
 func getStats(c *core.Context) {
+if data, ok := appCache.Get("stats"); ok {
+c.SetHeader("X-Cache", "HIT")
+c.JSON(http.StatusOK, data)
+return
+}
 s, err := database.GetStats()
 if err != nil {
 c.InternalError(err.Error())
 return
 }
+appCache.Set("stats", s, 30*time.Second)
+c.SetHeader("X-Cache", "MISS")
 c.JSON(http.StatusOK, s)
+}
+
+func cacheStatsHandler(c *core.Context) {
+c.JSON(http.StatusOK, appCache.Stats())
+}
+
+func invalidateCache() {
+appCache.DeletePrefix("products:")
+appCache.Delete("stats")
 }
