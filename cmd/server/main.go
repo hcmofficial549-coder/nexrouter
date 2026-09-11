@@ -62,7 +62,7 @@ registerDashboard(r)
 r.GET("/health", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
 "status":   "ok",
-"version":  "1.7.0",
+"version":  "1.8.0",
 "database": "sqlite",
 "auth":     "jwt",
 "cache":    appCache.Name(),
@@ -72,7 +72,7 @@ c.JSON(http.StatusOK, core.H{
 r.GET("/", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
 "message":    "Welcome to nexrouter!",
-"version":    "1.7.0",
+"version":    "1.8.0",
 "new":        "caching layer with X-Cache headers (HIT/MISS)",
 "dashboard":  "/dashboard",
 "demo_login": core.H{"email": "john@example.com", "password": "password123"},
@@ -82,9 +82,9 @@ c.JSON(http.StatusOK, core.H{
 api := r.Group("/api/v1")
 api.POST("/auth/register", registerHandler)
 api.POST("/auth/login", loginHandler)
-api.GET("/users", listUsers)
+api.GET("/users", listUsersPaged)
 api.GET("/users/:id", getUser)
-api.GET("/products", listProducts)
+api.GET("/products", listProductsPaged)
 api.GET("/products/:id", getProduct)
 api.GET("/cache/stats", cacheStatsHandler)
 	api.GET("/events/stream", eventsStreamHandler)
@@ -113,7 +113,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8080"
 }
-log.Printf("[nexrouter] v1.7.0 (SQLite + JWT + Cache) starting on :%s", port)
+log.Printf("[nexrouter] v1.8.0 (SQLite + JWT + Cache) starting on :%s", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }

@@ -6,7 +6,7 @@ const specPart1 = `
   "info": {
     "title": "nexrouter API",
     "description": "Custom high-performance HTTP router for Go - built from scratch. REST API with JWT authentication, SQLite persistence, caching layer, and realtime SSE events. Protected endpoints require: Authorization Bearer token (get one from /api/v1/auth/login).",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "contact": {
       "name": "hcmofficial549-coder",
       "url": "https://github.com/hcmofficial549-coder/nexrouter"

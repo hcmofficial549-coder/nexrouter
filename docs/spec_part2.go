@@ -82,7 +82,7 @@ const specPart2 = `
         "tags": ["products"],
         "summary": "List products (cached 30s)",
         "description": "Check the X-Cache response header: HIT = served from cache, MISS = from SQLite. Optional category filter.",
-        "parameters": [{ "name": "category", "in": "query", "required": false, "schema": { "type": "string" }, "example": "electronics" }],
+        "parameters": [{ "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } }, { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } }, { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "partial name match" }, { "name": "category", "in": "query", "schema": { "type": "string" } }, { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["id", "name", "price", "stock", "category"] } }, { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } }],
         "responses": {
           "200": {
             "description": "Product list",
