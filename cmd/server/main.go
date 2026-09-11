@@ -12,7 +12,6 @@ import (
 "github.com/nexrouter/nexrouter/cache"
 "github.com/nexrouter/nexrouter/core"
 "github.com/nexrouter/nexrouter/database"
-	"github.com/nexrouter/nexrouter/docs"
 	"github.com/nexrouter/nexrouter/events"
 "github.com/nexrouter/nexrouter/middleware"
 )
