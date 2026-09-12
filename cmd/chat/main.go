@@ -10,6 +10,7 @@ import (
 "time"
 
 "github.com/gorilla/websocket"
+	"github.com/nexrouter/nexrouter/auth"
 "github.com/nexrouter/nexrouter/chat"
 "github.com/nexrouter/nexrouter/core"
 "github.com/nexrouter/nexrouter/middleware"
@@ -17,6 +18,7 @@ import (
 
 var (
 hub = chat.NewHub()
+	jwtSecret = initSecret()
 upgrader = websocket.Upgrader{
 ReadBufferSize:  1024,
 WriteBufferSize: 1024,
@@ -40,6 +42,9 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 .join-card input{width:100%;background:#0a0a0f;border:1px solid #27272a;border-radius:8px;padding:.7rem .9rem;color:#e4e4e7;font-size:.9rem;outline:none;margin-bottom:.8rem;font-family:inherit}
 .join-card input:focus{border-color:#a855f7}
 .join-card button{width:100%;padding:.75rem;border:none;border-radius:8px;background:linear-gradient(135deg,#a855f7,#06b6d4);color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;font-family:inherit}
+.divider{font-size:.66rem;color:#71717a;margin:.9rem 0 .7rem;text-transform:uppercase;letter-spacing:.05em}
+.join-card button.gold{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000}
+.vbadge{display:inline-block;margin-left:5px;padding:0 5px;border-radius:4px;background:rgba(16,185,129,.2);color:#10b981;font-size:.58rem;font-weight:800;vertical-align:middle}
 .rooms-hint{font-size:.7rem;color:#71717a;margin-top:.8rem}
 #chatScreen{flex:1;display:none;flex-direction:column;height:100vh}
 .chat-head{display:flex;align-items:center;gap:.75rem;padding:.8rem 1.2rem;background:#12121a;border-bottom:1px solid #27272a}
@@ -70,7 +75,11 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 <p>realtime chat - powered by nexrouter + WebSocket</p>
 <input id="nameInput" placeholder="Nama Anda" maxlength="24">
 <input id="roomInput" placeholder="Room (default: general)" maxlength="24">
-<button onclick="joinRoom()">Join Room</button>
+<button onclick="joinRoom()">Join as Guest
+- atau -
+
+
+Login and Join</button>
 <div class="rooms-hint" id="roomsHint">loading rooms...</div>
 </div>
 </div>
@@ -89,6 +98,8 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 </div>
 <script>
 var ws = null, myName = '', myRoom = '', allowReconnect = true;
+var authToken = '';
+var API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8080' : 'https://nexrouter.up.railway.app';
 
 function loadRoomsHint(){
   fetch('/rooms').then(function(r){return r.json();}).then(function(d){
@@ -98,7 +109,29 @@ function loadRoomsHint(){
 }
 loadRoomsHint();
 
+function loginJoin(){
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  if(!email || !pass){ alert('Email dan password wajib diisi'); return; }
+  myRoom = document.getElementById('roomInput').value.trim() || 'general';
+  fetch(API_URL + '/api/v1/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email, password: pass})
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok: r.ok, d: d}; }); })
+  .then(function(res){
+    if(!res.ok){ alert('Login gagal: ' + ((res.d && res.d.error) || 'cek email/password')); return; }
+    authToken = res.d.token;
+    myName = (res.d.user && res.d.user.name) || email;
+    allowReconnect = true;
+    loadHistoryThen(connectWS);
+  })
+  .catch(function(e){ alert('API nexrouter tidak terjangkau di ' + API_URL + ' - pastikan API running. Detail: ' + e.message); });
+}
+
 function joinRoom(){
+  authToken = '';
   myName = document.getElementById('nameInput').value.trim() || 'anonymous';
   myRoom = document.getElementById('roomInput').value.trim() || 'general';
   allowReconnect = true;
@@ -118,7 +151,7 @@ function loadHistoryThen(next){
 
 function connectWS(){
   var proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
-  ws = new WebSocket(proto + location.host + '/ws?name=' + encodeURIComponent(myName) + '&room=' + encodeURIComponent(myRoom));
+  ws = new WebSocket(proto + location.host + '/ws?name=' + encodeURIComponent(myName) + '&room=' + encodeURIComponent(myRoom) + (authToken ? '&token=' + encodeURIComponent(authToken) : ''));
   ws.onopen = function(){
     document.getElementById('joinScreen').style.display='none';
     document.getElementById('chatScreen').style.display='flex';
@@ -157,7 +190,7 @@ function addMsg(m){
   var div=document.createElement('div');
   if(m.type==='message'){
     div.className='msg '+(m.from===myName?'me':'them');
-    var who=document.createElement('span'); who.className='who'; who.textContent=m.from;
+    var who=document.createElement('span'); who.className='who'; who.textContent=m.from; if(m.verified){ var vb=document.createElement('span'); vb.className='vbadge'; vb.textContent='verified'; who.appendChild(vb); }
     var txt=document.createElement('span'); txt.className='txt'; txt.textContent=m.text;
     var t=document.createElement('span'); t.className='t'; t.textContent=m.time||'';
     div.appendChild(who); div.appendChild(txt); div.appendChild(t);
@@ -206,7 +239,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.1.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.2.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -239,7 +272,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.1.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.2.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -265,7 +298,20 @@ return
 }
 
 send := make(chan []byte, 32)
-client := hub.Join(name, room, send)
+verified := false
+	if tok := strings.TrimSpace(c.Query("token")); tok != "" {
+		if claims, err := auth.ValidateToken(tok, jwtSecret); err == nil {
+			verified = true
+			if claims.Name != "" {
+				name = claims.Name
+			}
+			log.Printf("[nexchat] verified user: %s (%s)", name, claims.Email)
+		} else {
+			log.Printf("[nexchat] invalid token: %v", err)
+		}
+	}
+	client := hub.Join(name, room, send)
+	client.Verified = verified
 log.Printf("[nexchat] %s joined #%s (online: %d)", name, room, hub.Online(room))
 
 // write pump + keepalive ping (menjaga koneksi di balik proxy Railway)
@@ -351,4 +397,10 @@ if len(hist) > 0 {
 return hist
 }
 return chat.LoadHistory(room, 50)
+}
+func initSecret() string {
+if s := os.Getenv("JWT_SECRET"); s != "" {
+return s
+}
+return "nexrouter-dev-secret-change-me"
 }
