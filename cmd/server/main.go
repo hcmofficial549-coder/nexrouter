@@ -14,6 +14,7 @@ import (
 "github.com/nexrouter/nexrouter/database"
 	"github.com/nexrouter/nexrouter/events"
 "github.com/nexrouter/nexrouter/middleware"
+	"github.com/nexrouter/nexrouter/webhooks"
 )
 
 var (
@@ -45,6 +46,10 @@ log.Printf("[nexrouter] cache engine: %s", appCache.Name())
 	eventHub = events.NewHub(256)
 	log.Printf("[nexrouter] realtime event hub started")
 
+	if err := database.MigrateWebhooks(); err != nil {
+		log.Fatalf("[nexrouter] webhooks migration failed: %v", err)
+	}
+
 if hash, err := auth.HashPassword("password123"); err == nil {
 if n := database.SetDefaultPasswords(hash); n > 0 {
 log.Printf("[nexrouter] set default password for %d legacy user(s)", n)
@@ -62,7 +67,7 @@ registerDashboard(r)
 r.GET("/health", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
 "status":   "ok",
-"version":  "1.8.0",
+"version":  "1.9.0",
 "database": "sqlite",
 "auth":     "jwt",
 "cache":    appCache.Name(),
@@ -72,7 +77,7 @@ c.JSON(http.StatusOK, core.H{
 r.GET("/", func(c *core.Context) {
 c.JSON(http.StatusOK, core.H{
 "message":    "Welcome to nexrouter!",
-"version":    "1.8.0",
+"version":    "1.9.0",
 "new":        "caching layer with X-Cache headers (HIT/MISS)",
 "dashboard":  "/dashboard",
 "demo_login": core.H{"email": "john@example.com", "password": "password123"},
@@ -99,6 +104,10 @@ prot.GET("/stats", getStats)
 prot.POST("/products", createProduct)
 prot.PUT("/products/:id", updateProduct)
 prot.DELETE("/products/:id", deleteProduct)
+	prot.GET("/webhooks", listWebhooksHandler)
+	prot.POST("/webhooks", createWebhookHandler)
+	prot.DELETE("/webhooks/:id", deleteWebhookHandler)
+	prot.POST("/webhooks/:id/test", testWebhookHandler)
 
 go func() {
 quit := make(chan os.Signal, 1)
@@ -113,7 +122,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8080"
 }
-log.Printf("[nexrouter] v1.8.0 (SQLite + JWT + Cache) starting on :%s", port)
+log.Printf("[nexrouter] v1.9.0 (SQLite + JWT + Cache) starting on :%s", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -152,7 +161,8 @@ if err != nil {
 c.InternalError("failed to generate token")
 return
 }
-c.Created(core.H{"success": true, "user": u, "token": token, "expires_in": "24h"})
+webhooks.Dispatch("user.registered", u)
+	c.Created(core.H{"success": true, "user": u, "token": token, "expires_in": "24h"})
 }
 
 func loginHandler(c *core.Context) {
@@ -284,7 +294,8 @@ c.InternalError(err.Error())
 return
 }
 invalidateCache()
-createdBy := ""
+webhooks.Dispatch("product.created", p)
+	createdBy := ""
 if cl := auth.GetClaims(c); cl != nil {
 createdBy = cl.Email
 }
@@ -326,7 +337,8 @@ c.NotFound("product not found")
 return
 }
 invalidateCache()
-c.JSON(http.StatusOK, core.H{"success": true, "data": p})
+webhooks.Dispatch("product.updated", p)
+	c.JSON(http.StatusOK, core.H{"success": true, "data": p})
 }
 
 func deleteProduct(c *core.Context) {
@@ -345,7 +357,8 @@ c.NotFound("product not found")
 return
 }
 invalidateCache()
-c.JSON(http.StatusOK, core.H{"success": true, "message": "product deleted"})
+webhooks.Dispatch("product.deleted", core.H{"id": id})
+	c.JSON(http.StatusOK, core.H{"success": true, "message": "product deleted"})
 }
 
 func getStats(c *core.Context) {
