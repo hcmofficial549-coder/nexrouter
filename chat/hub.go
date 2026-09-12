@@ -23,6 +23,7 @@ Time string `json:"time"`
 type RoomInfo struct {
 Name   string `json:"name"`
 Online int    `json:"online"`
+	LastAct int64 `json:"last_act"`
 }
 
 // Client is one connected websocket user
@@ -39,6 +40,7 @@ type Hub struct {
 mu      sync.RWMutex
 rooms   map[string]map[*Client]bool
 history map[string][]Message
+	lastAct map[string]int64
 }
 
 const historyLimit = 50
@@ -48,6 +50,7 @@ func NewHub() *Hub {
 return &Hub{
 rooms:   make(map[string]map[*Client]bool),
 history: make(map[string][]Message),
+		lastAct: make(map[string]int64),
 }
 }
 
@@ -102,6 +105,7 @@ if len(hist) > historyLimit {
 hist = hist[len(hist)-historyLimit:]
 }
 h.history[m.Room] = hist
+	h.lastAct[m.Room] = time.Now().Unix()
 clients := h.rooms[m.Room]
 targets := make([]*Client, 0, len(clients))
 for c := range clients {

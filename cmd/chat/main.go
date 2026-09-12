@@ -68,6 +68,19 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 .rx-bar{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 .rx-chip{background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.35);border-radius:999px;padding:0 8px;font-size:.68rem}
 .msg{cursor:pointer}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:190px;background:#12121a;border-right:1px solid #27272a;padding:.8rem .6rem;overflow-y:auto;z-index:40;display:none}
+.sidebar.show{display:block}
+body.sb-on{padding-left:200px}
+.sb-logo{font-weight:900;color:#06b6d4;font-size:.95rem;margin-bottom:.6rem;padding:0 .3rem}
+.sb-label{font-size:.6rem;color:#71717a;text-transform:uppercase;letter-spacing:.08em;margin:.6rem .3rem .3rem}
+.room-item{display:flex;align-items:center;gap:.4rem;padding:.45rem .55rem;border-radius:7px;cursor:pointer;font-size:.8rem;color:#a1a1aa;margin-bottom:.15rem}
+.room-item:hover{background:#1a1a2e;color:#e4e4e7}
+.room-item.active{background:linear-gradient(135deg,#7c3aed,#0e7490);color:#fff;font-weight:700}
+.room-item .rn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room-item .ro{font-size:.65rem;color:#10b981}
+.room-item .rb{background:#ef4444;color:#fff;font-size:.6rem;font-weight:800;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
+.sb-foot{margin-top:1rem;padding:.5rem .3rem;border-top:1px solid #27272a;font-size:.7rem;color:#71717a}
+@media(max-width:640px){body.sb-on{padding-left:0}.sidebar{display:none}}
 .msg .who{font-size:.66rem;font-weight:800;color:#a855f7}
 .msg.me .who{color:#e9d5ff}
 .msg .txt{word-break:break-word;white-space:pre-wrap}
@@ -80,6 +93,12 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 </style>
 </head>
 <body>
+<div class="sidebar" id="sidebar">
+<div class="sb-logo">nexchat</div>
+<div class="sb-label">Rooms</div>
+<div id="roomList"></div>
+<div class="sb-foot" id="sbUser"></div>
+</div>
 <div id="joinScreen">
 <div class="join-card">
 <h1>nexchat</h1>
@@ -166,10 +185,10 @@ function connectWS(){
   ws = new WebSocket(proto + location.host + '/ws?name=' + encodeURIComponent(myName) + '&room=' + encodeURIComponent(myRoom) + (authToken ? '&token=' + encodeURIComponent(authToken) : ''));
   ws.onopen = function(){
     document.getElementById('joinScreen').style.display='none';
-    document.getElementById('chatScreen').style.display='flex';
+    document.getElementById('chatScreen').style.display='flex'; document.getElementById('sidebar').classList.add('show'); document.body.classList.add('sb-on'); document.getElementById('sbUser').textContent = myName;
     document.getElementById('roomTitle').textContent='#'+myRoom;
-    updateOnline();
-    setInterval(updateOnline, 5000);
+    updateRooms();
+    if(!window.__roomsTimer){ window.__roomsTimer = setInterval(updateRooms, 5000); }
   };
   ws.onmessage = function(e){
     try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else if(mm.type === 'react'){ renderReactions(mm.msg_id, mm.reactions); } else if(mm.type === 'dm_history'){ renderDMHistory(mm); } else { hideTyping(); addMsg(mm); } } catch(err){}
@@ -261,6 +280,55 @@ function renderReactions(msgId, reactions){
     b.appendChild(bar);
   }
 }
+var unread = {};
+var lastActSeen = {};
+function renderRooms(rooms){
+  var el = document.getElementById('roomList');
+  el.innerHTML = '';
+  rooms.forEach(function(r){
+    var d = document.createElement('div');
+    d.className = 'room-item' + (r.name === myRoom ? ' active' : '');
+    var nm = document.createElement('span'); nm.className='rn'; nm.textContent = '#' + r.name;
+    d.appendChild(nm);
+    if(unread[r.name] && r.name !== myRoom){
+      var b = document.createElement('span'); b.className='rb';
+      b.textContent = unread[r.name] > 99 ? '99+' : unread[r.name];
+      d.appendChild(b);
+    } else {
+      var on = document.createElement('span'); on.className='ro'; on.textContent = r.online;
+      d.appendChild(on);
+    }
+    d.onclick = (function(name){ return function(){ switchRoom(name); }; })(r.name);
+    el.appendChild(d);
+  });
+}
+function switchRoom(name){
+  if(name === myRoom) return;
+  unread[name] = 0;
+  myRoom = name;
+  allowReconnect = false;
+  if(ws){ ws.close(); }
+  document.getElementById('msgs').innerHTML = '';
+  document.getElementById('roomTitle').textContent = '#' + myRoom;
+  loadHistoryThen(function(){ allowReconnect = true; connectWS(); });
+}
+function updateRooms(){
+  fetch('/rooms').then(function(r){return r.json();}).then(function(d){
+    var rooms = d.data || [];
+    rooms.forEach(function(r){
+      var prev = lastActSeen[r.name] || 0;
+      if(r.last_act && r.last_act > prev){
+        if(prev !== 0 && r.name !== myRoom){ unread[r.name] = (unread[r.name]||0) + 1; }
+        lastActSeen[r.name] = r.last_act;
+      }
+      if(r.name === myRoom){
+        unread[r.name] = 0;
+        document.getElementById('online').textContent = r.online + ' online';
+      }
+    });
+    renderRooms(rooms);
+  }).catch(function(){});
+}
 function addMsg(m){
   var box=document.getElementById('msgs');
   var div=document.createElement('div');
@@ -316,7 +384,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.5.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.6.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -327,7 +395,7 @@ c.Writer.Write([]byte(chatUI))
 })
 
 r.GET("/rooms", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"success": true, "data": hub.Rooms()})
+c.JSON(http.StatusOK, core.H{"success": true, "data": hub.RoomsFull()})
 })
 
 r.GET("/rooms/:room/history", func(c *core.Context) {
@@ -349,7 +417,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.5.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.6.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
