@@ -7,7 +7,8 @@ import (
 "net/http"
 "os"
 "os/signal"
-"strings"
+"strconv"
+	"strings"
 "time"
 
 "github.com/gorilla/websocket"
@@ -19,6 +20,7 @@ import (
 
 var (
 hub = chat.NewHub()
+	spamGuard = chat.NewSpamGuard(10, 5*time.Second)
 	jwtSecret = initSecret()
 upgrader = websocket.Upgrader{
 ReadBufferSize:  1024,
@@ -79,6 +81,8 @@ body.sb-on{padding-left:200px}
 .room-item .rn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .room-item .ro{font-size:.65rem;color:#10b981}
 .room-item .rb{background:#ef4444;color:#fff;font-size:.6rem;font-weight:800;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
+.sb-newroom{width:100%;margin-top:.4rem;padding:.45rem;background:#1a1a2e;border:1px dashed #3f3f46;border-radius:7px;color:#a1a1aa;font-size:.75rem;cursor:pointer;font-family:inherit}
+.sb-newroom:hover{border-color:#06b6d4;color:#06b6d4}
 .sb-foot{margin-top:1rem;padding:.5rem .3rem;border-top:1px solid #27272a;font-size:.7rem;color:#71717a}
 @media(max-width:640px){body.sb-on{padding-left:0}.sidebar{display:none}}
 .msg .who{font-size:.66rem;font-weight:800;color:#a855f7}
@@ -97,6 +101,7 @@ body.sb-on{padding-left:200px}
 <div class="sb-logo">nexchat</div>
 <div class="sb-label">Rooms</div>
 <div id="roomList"></div>
+<button class="sb-newroom" onclick="newRoom()">+ new room</button>
 <div class="sb-foot" id="sbUser"></div>
 </div>
 <div id="joinScreen">
@@ -302,6 +307,13 @@ function renderRooms(rooms){
     el.appendChild(d);
   });
 }
+function newRoom(){
+  var name = prompt('New room name:');
+  if(!name) return;
+  name = name.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '-').substring(0, 24);
+  if(!name) return;
+  switchRoom(name);
+}
 function switchRoom(name){
   if(name === myRoom) return;
   unread[name] = 0;
@@ -384,7 +396,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.6.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.7.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -417,7 +429,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.6.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.7.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -523,6 +535,7 @@ handleClientMessage(client, text)
 }
 
 hub.Leave(client)
+	spamGuard.Cleanup(client)
 close(done)
 log.Printf("[nexchat] %s left #%s", name, room)
 }
@@ -556,7 +569,11 @@ return
 if len(raw) > 500 {
 raw = raw[:500]
 }
-if strings.HasPrefix(raw, "/history ") {
+if ok, mutedSec := spamGuard.Allow(c); !ok {
+		hub.NotifyClient(c, "slow down! muted "+strconv.Itoa(mutedSec)+"s (anti-spam)")
+		return
+	}
+	if strings.HasPrefix(raw, "/history ") {
 		target := strings.Trim(strings.TrimSpace(raw[9:]), "\"")
 		if target == "" {
 			hub.NotifyClient(c, "usage: /history username")
