@@ -81,6 +81,12 @@ body.sb-on{padding-left:200px}
 .room-item .rn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .room-item .ro{font-size:.65rem;color:#10b981}
 .room-item .rb{background:#ef4444;color:#fff;font-size:.6rem;font-weight:800;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
+.dm-item{display:flex;align-items:center;gap:.4rem;padding:.4rem .55rem;border-radius:7px;cursor:pointer;font-size:.78rem;color:#a1a1aa;margin-bottom:.15rem}
+.dm-item:hover{background:#1a1a2e;color:#e4e4e7}
+.dm-item.active{background:linear-gradient(135deg,#be185d,#9333ea);color:#fff;font-weight:700}
+.dm-item .dn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-item .dt{font-size:.6rem;color:#71717a}
+.dt-empty{font-size:.65rem;color:#71717a;padding:.2rem .55rem;font-style:italic}
 .sb-newroom{width:100%;margin-top:.4rem;padding:.45rem;background:#1a1a2e;border:1px dashed #3f3f46;border-radius:7px;color:#a1a1aa;font-size:.75rem;cursor:pointer;font-family:inherit}
 .sb-newroom:hover{border-color:#06b6d4;color:#06b6d4}
 .sb-foot{margin-top:1rem;padding:.5rem .3rem;border-top:1px solid #27272a;font-size:.7rem;color:#71717a}
@@ -102,6 +108,8 @@ body.sb-on{padding-left:200px}
 <div class="sb-label">Rooms</div>
 <div id="roomList"></div>
 <button class="sb-newroom" onclick="newRoom()">+ new room</button>
+<div class="sb-label">Direct</div>
+<div id="dmList"></div>
 <div class="sb-foot" id="sbUser"></div>
 </div>
 <div id="joinScreen">
@@ -192,11 +200,11 @@ function connectWS(){
     document.getElementById('joinScreen').style.display='none';
     document.getElementById('chatScreen').style.display='flex'; document.getElementById('sidebar').classList.add('show'); document.body.classList.add('sb-on'); document.getElementById('sbUser').textContent = myName;
     document.getElementById('roomTitle').textContent='#'+myRoom;
-    updateRooms();
+    updateRooms(); sendDMList();
     if(!window.__roomsTimer){ window.__roomsTimer = setInterval(updateRooms, 5000); }
   };
   ws.onmessage = function(e){
-    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else if(mm.type === 'react'){ renderReactions(mm.msg_id, mm.reactions); } else if(mm.type === 'dm_history'){ renderDMHistory(mm); } else { hideTyping(); addMsg(mm); } } catch(err){}
+    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else if(mm.type === 'react'){ renderReactions(mm.msg_id, mm.reactions); } else if(mm.type === 'dm_list'){ renderDMs(mm.threads); } else if(mm.type === 'dm_history'){ renderDMHistory(mm); } else { hideTyping(); if(!dmTarget || mm.from === 'system'){ addMsg(mm); } } } catch(err){}
   };
   ws.onclose = function(){
     if(allowReconnect){
@@ -314,8 +322,47 @@ function newRoom(){
   if(!name) return;
   switchRoom(name);
 }
+var dmTarget = null;
+function sendDMList(){ if(ws && ws.readyState === 1){ ws.send(JSON.stringify({type:'dm_list'})); } }
+function renderDMs(threads){
+  var el = document.getElementById('dmList');
+  if(!el) return;
+  el.innerHTML = '';
+  if(!threads || !threads.length){
+    var e = document.createElement('div');
+    e.className = 'dt-empty';
+    e.textContent = 'belum ada DM - kirim /pm dulu';
+    el.appendChild(e);
+    return;
+  }
+  threads.forEach(function(t){
+    var d = document.createElement('div');
+    d.className = 'dm-item' + (dmTarget === t['with'] ? ' active' : '');
+    var nm = document.createElement('span'); nm.className='dn'; nm.textContent = '@' + t['with'];
+    var tm = document.createElement('span'); tm.className='dt'; tm.textContent = t.last || '';
+    d.appendChild(nm); d.appendChild(tm);
+    d.onclick = (function(name){ return function(){ openDM(name); }; })(t['with']);
+    el.appendChild(d);
+  });
+}
+function openDM(name){
+  dmTarget = name;
+  document.getElementById('roomTitle').textContent = '@' + name + ' (DM)';
+  document.getElementById('msgs').innerHTML = '';
+  if(ws && ws.readyState === 1){
+    sendDMList();
+    ws.send('/history "' + name + '"');
+  }
+}
+function exitDM(){
+  dmTarget = null;
+  document.getElementById('roomTitle').textContent = '#' + myRoom;
+  document.getElementById('msgs').innerHTML = '';
+  loadHistoryThen(function(){ sendDMList(); });
+}
 function switchRoom(name){
-  if(name === myRoom) return;
+  if(name === myRoom){ if(dmTarget){ exitDM(); } return; }
+  dmTarget = null;
   unread[name] = 0;
   myRoom = name;
   allowReconnect = false;
@@ -365,7 +412,7 @@ document.getElementById('chatForm').addEventListener('submit', function(e){
   var inp=document.getElementById('msgInput');
   var txt=inp.value.trim();
   if(!txt||!ws||ws.readyState!==1) return;
-  ws.send(JSON.stringify({type:"chat", text: txt}));
+  if(dmTarget){ ws.send(JSON.stringify({type:'pm', to: dmTarget, text: txt})); } else { ws.send(JSON.stringify({type:"chat", text: txt})); }
   inp.value='';
   inp.focus();
 });
@@ -396,7 +443,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.7.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.8.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -429,7 +476,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.7.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.8.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -545,13 +592,47 @@ Type string `json:"type"`
 Text string `json:"text"`
 		MsgID int64 `json:"msg_id"`
 		Emoji string `json:"emoji"`
+		To    string `json:"to"`
 }
 if err := json.Unmarshal([]byte(raw), &env); err == nil {
 if env.Type == "typing" {
 hub.BroadcastTyping(c)
 return
 }
-if env.Type == "react" {
+if env.Type == "pm" {
+			if ok, sec := spamGuard.Allow(c); !ok {
+				hub.NotifyClient(c, "slow down! muted "+strconv.Itoa(sec)+"s (anti-spam)")
+				return
+			}
+			to := strings.TrimSpace(env.To)
+			text := strings.TrimSpace(env.Text)
+			if to == "" || text == "" {
+				return
+			}
+			if to == c.Name {
+				hub.NotifyClient(c, "cannot PM yourself")
+				return
+			}
+			if len(text) > 500 {
+				text = text[:500]
+			}
+			if !hub.SendPM(c, to, text) {
+				hub.NotifyClient(c, "saved - "+to+" is offline; they can read via /history")
+			}
+			return
+		}
+		if env.Type == "dm_list" {
+			threads := chat.DMThreads(c.Name)
+			payload := map[string]interface{}{"type": "dm_list", "threads": threads}
+			if b, err := json.Marshal(payload); err == nil {
+				select {
+				case c.Send <- b:
+				default:
+				}
+			}
+			return
+		}
+		if env.Type == "react" {
 			if env.MsgID > 0 && env.Emoji != "" {
 				snap := chat.AddReaction(env.MsgID, env.Emoji, c.Name)
 				hub.BroadcastReaction(c.Room, env.MsgID, snap)
