@@ -76,7 +76,7 @@ defer rows.Close()
 var rev []Message
 for rows.Next() {
 var m Message
-if err := rows.Scan(&m.From, &m.Text, &m.Time); err != nil {
+if err := rows.Scan(&m.ID, &m.From, &m.Text, &m.Time); err != nil {
 continue
 }
 m.Type = "message"

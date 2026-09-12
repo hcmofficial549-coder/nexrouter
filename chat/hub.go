@@ -14,6 +14,7 @@ Room string `json:"room"`
 Text string `json:"text"`
 Time string `json:"time"`
 	Verified bool `json:"verified,omitempty"`
+	ID   int64  `json:"id,omitempty"`
 	To    string `json:"to,omitempty"`
 	Admin bool   `json:"admin,omitempty"`
 }
@@ -92,7 +93,8 @@ h.store(Message{Type: "message", From: c.Name, Room: c.Room, Text: text, Time: n
 
 // store appends to history and fans out to room members (non-blocking)
 func (h *Hub) store(m Message) {
-b := m.bytes()
+m.ID = nextMsgID()
+	b := m.bytes()
 	go SaveMessage(m)
 h.mu.Lock()
 hist := append(h.history[m.Room], m)

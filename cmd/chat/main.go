@@ -62,6 +62,12 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 .msg.pm .who{color:#ec4899}
 .vbadge.adm{background:rgba(251,191,36,.18);color:#fbbf24}
 .cmd-hint{padding:.3rem 1rem;font-size:.64rem;color:#71717a;background:#0d1117;border-top:1px solid #27272a;text-align:center}
+.rx-picker{position:absolute;top:-36px;right:4px;display:flex;gap:2px;background:#1a1a2e;border:1px solid #3f3f46;border-radius:9px;padding:3px;z-index:50;box-shadow:0 6px 16px rgba(0,0,0,.55)}
+.rx-picker button{background:none;border:none;font-size:1.05rem;cursor:pointer;padding:2px 4px;border-radius:6px}
+.rx-picker button:hover{background:#27272a;transform:scale(1.25)}
+.rx-bar{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.rx-chip{background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.35);border-radius:999px;padding:0 8px;font-size:.68rem}
+.msg{cursor:pointer}
 .msg .who{font-size:.66rem;font-weight:800;color:#a855f7}
 .msg.me .who{color:#e9d5ff}
 .msg .txt{word-break:break-word;white-space:pre-wrap}
@@ -166,7 +172,7 @@ function connectWS(){
     setInterval(updateOnline, 5000);
   };
   ws.onmessage = function(e){
-    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else { hideTyping(); addMsg(mm); } } catch(err){}
+    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else if(mm.type === 'react'){ renderReactions(mm.msg_id, mm.reactions); } else { hideTyping(); addMsg(mm); } } catch(err){}
   };
   ws.onclose = function(){
     if(allowReconnect){
@@ -200,9 +206,55 @@ function addPM(m){
   who.textContent = mine ? ('PM to @' + m.to) : ('PM from @' + m.from);
   var txt=document.createElement('span'); txt.className='txt'; txt.textContent=m.text;
   var t=document.createElement('span'); t.className='t'; t.textContent=m.time||'';
-  div.appendChild(who); div.appendChild(txt); div.appendChild(t);
+  div.appendChild(who); div.appendChild(txt); div.appendChild(t); if(m.id){ div.dataset.msgid = m.id; div.style.position='relative'; div.onclick = function(){ showPicker(m.id, div); }; }
   box.appendChild(div);
   box.scrollTop=box.scrollHeight;
+}
+var rxPicker = null;
+var RX_EMOJIS = ['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83D\uDE02', '\uD83C\uDF89', '\uD83D\uDD25'];
+function showPicker(msgId, bubble){
+  hidePicker();
+  rxPicker = document.createElement('div');
+  rxPicker.className = 'rx-picker';
+  RX_EMOJIS.forEach(function(em){
+    var b = document.createElement('button');
+    b.textContent = em;
+    b.onclick = function(e){
+      e.stopPropagation();
+      if(ws && ws.readyState === 1){
+        ws.send(JSON.stringify({type:'react', msg_id: msgId, emoji: em}));
+      }
+      hidePicker();
+    };
+    rxPicker.appendChild(b);
+  });
+  bubble.appendChild(rxPicker);
+  setTimeout(function(){ document.addEventListener('click', hidePickerOnce); }, 20);
+}
+function hidePickerOnce(){ hidePicker(); document.removeEventListener('click', hidePickerOnce); }
+function hidePicker(){
+  if(rxPicker && rxPicker.parentNode){ rxPicker.parentNode.removeChild(rxPicker); }
+  rxPicker = null;
+}
+function renderReactions(msgId, reactions){
+  var bubbles = document.querySelectorAll('[data-msgid="' + msgId + '"]');
+  for(var i=0; i<bubbles.length; i++){
+    var b = bubbles[i];
+    var old = b.querySelector('.rx-bar');
+    if(old){ old.parentNode.removeChild(old); }
+    var keys = Object.keys(reactions || {});
+    if(!keys.length){ continue; }
+    var bar = document.createElement('div');
+    bar.className = 'rx-bar';
+    keys.forEach(function(em){
+      var chip = document.createElement('span');
+      chip.className = 'rx-chip';
+      chip.textContent = em + ' ' + reactions[em].length;
+      chip.title = reactions[em].join(', ');
+      bar.appendChild(chip);
+    });
+    b.appendChild(bar);
+  }
 }
 function addMsg(m){
   var box=document.getElementById('msgs');
@@ -212,7 +264,7 @@ function addMsg(m){
     var who=document.createElement('span'); who.className='who'; who.textContent=m.from; if(m.verified){ var vb=document.createElement('span'); vb.className='vbadge'; vb.textContent='verified'; who.appendChild(vb); } if(m.admin){ var ab=document.createElement('span'); ab.className='vbadge adm'; ab.textContent='admin'; who.appendChild(ab); }
     var txt=document.createElement('span'); txt.className='txt'; txt.textContent=m.text;
     var t=document.createElement('span'); t.className='t'; t.textContent=m.time||'';
-    div.appendChild(who); div.appendChild(txt); div.appendChild(t);
+    div.appendChild(who); div.appendChild(txt); div.appendChild(t); if(m.id){ div.dataset.msgid = m.id; div.style.position='relative'; div.onclick = function(){ showPicker(m.id, div); }; }
   } else {
     div.className='sys';
     div.textContent=(m.time?('['+m.time+'] '):'')+(m.text||'');
@@ -251,6 +303,7 @@ dbPath := os.Getenv("DB_PATH")
 		log.Printf("[nexchat] WARNING: persistence off: %v", err)
 	} else {
 		log.Printf("[nexchat] persistence: %s", dbPath)
+		chat.SeedMsgCounter()
 	}
 
 	r := core.New()
@@ -258,7 +311,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.3.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.4.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -291,7 +344,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.3.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.4.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -404,13 +457,22 @@ func handleClientMessage(c *chat.Client, raw string) {
 var env struct {
 Type string `json:"type"`
 Text string `json:"text"`
+		MsgID int64 `json:"msg_id"`
+		Emoji string `json:"emoji"`
 }
 if err := json.Unmarshal([]byte(raw), &env); err == nil {
 if env.Type == "typing" {
 hub.BroadcastTyping(c)
 return
 }
-if env.Type == "chat" {
+if env.Type == "react" {
+			if env.MsgID > 0 && env.Emoji != "" {
+				snap := chat.AddReaction(env.MsgID, env.Emoji, c.Name)
+				hub.BroadcastReaction(c.Room, env.MsgID, snap)
+			}
+			return
+		}
+		if env.Type == "chat" {
 raw = env.Text
 }
 }
