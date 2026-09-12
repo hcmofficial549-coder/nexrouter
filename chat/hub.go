@@ -88,6 +88,7 @@ h.store(Message{Type: "message", From: c.Name, Room: c.Room, Text: text, Time: n
 // store appends to history and fans out to room members (non-blocking)
 func (h *Hub) store(m Message) {
 b := m.bytes()
+	go SaveMessage(m)
 h.mu.Lock()
 hist := append(h.history[m.Room], m)
 if len(hist) > historyLimit {

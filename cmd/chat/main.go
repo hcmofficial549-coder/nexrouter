@@ -1,7 +1,8 @@
 package main
 
 import (
-"log"
+"encoding/json"
+	"log"
 "net/http"
 "os"
 "os/signal"
@@ -55,6 +56,7 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 .msg.me .who{color:#e9d5ff}
 .msg .txt{word-break:break-word;white-space:pre-wrap}
 .msg .t{font-size:.6rem;opacity:.55;align-self:flex-end}
+.typing-bar{padding:.15rem 1rem;font-size:.72rem;color:#a855f7;font-style:italic;min-height:1.1rem}
 .chat-input{display:flex;gap:.5rem;padding:.8rem 1rem;background:#12121a;border-top:1px solid #27272a}
 .chat-input input{flex:1;background:#0a0a0f;border:1px solid #27272a;border-radius:8px;padding:.65rem .9rem;color:#e4e4e7;font-size:.88rem;outline:none;font-family:inherit}
 .chat-input input:focus{border-color:#a855f7}
@@ -125,7 +127,7 @@ function connectWS(){
     setInterval(updateOnline, 5000);
   };
   ws.onmessage = function(e){
-    try { addMsg(JSON.parse(e.data)); } catch(err){}
+    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else { hideTyping(); addMsg(mm); } } catch(err){}
   };
   ws.onclose = function(){
     if(allowReconnect){
@@ -146,6 +148,10 @@ function updateOnline(){
   }).catch(function(){});
 }
 
+var typingTimer = null, lastTypingSent = 0;
+function showTyping(who){ var el = document.getElementById("typingInd"); el.textContent = who + " is typing..."; clearTimeout(typingTimer); typingTimer = setTimeout(function(){ el.textContent = ""; }, 2500); }
+function hideTyping(){ document.getElementById("typingInd").textContent = ""; }
+function sendTyping(){ var n = Date.now(); if(ws && ws.readyState === 1 && n - lastTypingSent > 1500){ lastTypingSent = n; ws.send(JSON.stringify({type:"typing"})); } }
 function addMsg(m){
   var box=document.getElementById('msgs');
   var div=document.createElement('div');
@@ -164,12 +170,13 @@ function addMsg(m){
   while(box.children.length>300){ box.removeChild(box.firstChild); }
 }
 
+document.getElementById('msgInput').addEventListener('input', sendTyping);
 document.getElementById('chatForm').addEventListener('submit', function(e){
   e.preventDefault();
   var inp=document.getElementById('msgInput');
   var txt=inp.value.trim();
   if(!txt||!ws||ws.readyState!==1) return;
-  ws.send(txt);
+  ws.send(JSON.stringify({type:"chat", text: txt}));
   inp.value='';
   inp.focus();
 });
@@ -184,12 +191,22 @@ function leaveChat(){
 </html>
 `
 func main() {
-r := core.New()
+dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "data/nexchat.db"
+	}
+	if err := chat.InitStore(dbPath); err != nil {
+		log.Printf("[nexchat] WARNING: persistence off: %v", err)
+	} else {
+		log.Printf("[nexchat] persistence: %s", dbPath)
+	}
+
+	r := core.New()
 r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.0.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.1.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -205,7 +222,7 @@ c.JSON(http.StatusOK, core.H{"success": true, "data": hub.Rooms()})
 
 r.GET("/rooms/:room/history", func(c *core.Context) {
 room := c.Param("room")
-c.JSON(http.StatusOK, core.H{"success": true, "room": room, "data": hub.History(room)})
+c.JSON(http.StatusOK, core.H{"success": true, "room": room, "data": historyOrLoad(room)})
 })
 
 r.GET("/ws", wsHandler)
@@ -222,7 +239,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.0.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.1.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -294,13 +311,44 @@ text := strings.TrimSpace(string(raw))
 if text == "" {
 continue
 }
-if len(text) > 500 {
+if len(text) > 2000 {
 text = text[:500]
 }
-hub.Broadcast(client, text)
+handleClientMessage(client, text)
 }
 
 hub.Leave(client)
 close(send)
 log.Printf("[nexchat] %s left #%s", name, room)
+}
+func handleClientMessage(c *chat.Client, raw string) {
+var env struct {
+Type string `json:"type"`
+Text string `json:"text"`
+}
+if err := json.Unmarshal([]byte(raw), &env); err == nil {
+if env.Type == "typing" {
+hub.BroadcastTyping(c)
+return
+}
+if env.Type == "chat" {
+raw = env.Text
+}
+}
+raw = strings.TrimSpace(raw)
+if raw == "" {
+return
+}
+if len(raw) > 500 {
+raw = raw[:500]
+}
+hub.Broadcast(c, raw)
+}
+
+func historyOrLoad(room string) []chat.Message {
+hist := hub.History(room)
+if len(hist) > 0 {
+return hist
+}
+return chat.LoadHistory(room, 50)
 }
