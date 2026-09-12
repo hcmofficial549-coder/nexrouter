@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>nexrouter Dashboard</title>
+<title>nexrouter Dashboard v2</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -15,117 +15,124 @@
   --accent:linear-gradient(135deg,#a855f7,#06b6d4);
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
-.wrap{max-width:1100px;margin:0 auto;padding:1.5rem}
+.wrap{max-width:1150px;margin:0 auto;padding:1.5rem}
 header{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:.6rem;font-weight:900;font-size:1.15rem}
 .logo-icon{width:38px;height:38px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.2rem}
-.logo small{display:block;font-size:.65rem;color:var(--text3);font-weight:600;letter-spacing:.05em}
-.url-box{flex:1;min-width:250px;display:flex;gap:.5rem}
+.logo small{display:block;font-size:.62rem;color:var(--text3);font-weight:600;letter-spacing:.05em}
+.url-box{flex:1;min-width:240px;display:flex;gap:.5rem}
 .url-box input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.55rem .85rem;color:var(--cyan);font-family:monospace;font-size:.8rem;outline:none;min-width:0}
-.url-box input:focus{border-color:var(--cyan)}
 .conn-status{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:var(--text3);white-space:nowrap}
 .conn-dot{width:9px;height:9px;border-radius:50%;background:var(--text3)}
 .conn-dot.on{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,.6)}
 .conn-dot.off{background:var(--red)}
-.btn{padding:.55rem 1.1rem;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem;border:none;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:.4rem}
+.btn{padding:.55rem 1.05rem;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem;border:none;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:.4rem}
 .btn:hover{transform:translateY(-1px)}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-acc{background:var(--accent);color:#fff}
 .btn-green{background:var(--green);color:#000}
 .btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
-.btn-ghost:hover{color:var(--text);border-color:var(--cyan)}
 .btn-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3)}
-.btn-sm{padding:.35rem .75rem;font-size:.73rem}
+.btn-sm{padding:.35rem .7rem;font-size:.73rem}
 .userbar{background:var(--bg2);border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:.8rem 1.25rem;margin-bottom:1.25rem;display:none;align-items:center;gap:.85rem;flex-wrap:wrap}
 .userbar.show{display:flex}
-.avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.95rem;flex-shrink:0}
-.userbar-info{flex:1;min-width:150px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex-shrink:0}
+.userbar-info{flex:1;min-width:140px}
 .userbar-name{font-weight:700;font-size:.9rem}
 .userbar-email{font-size:.75rem;color:var(--text3)}
-.userbar-badge{font-size:.65rem;font-weight:800;padding:.2rem .6rem;border-radius:4px;background:rgba(16,185,129,.15);color:var(--green);text-transform:uppercase;letter-spacing:.05em}
+.userbar-badge{font-size:.63rem;font-weight:800;padding:.2rem .6rem;border-radius:4px;background:rgba(16,185,129,.15);color:var(--green);text-transform:uppercase}
 .auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.75rem;max-width:440px;margin:0 auto 1.5rem}
 .auth-card.hide{display:none}
 .auth-title{font-size:1.25rem;font-weight:800;text-align:center;margin-bottom:.25rem}
 .auth-sub{font-size:.82rem;color:var(--text3);text-align:center;margin-bottom:1.25rem}
 .auth-tabs{display:flex;gap:.35rem;background:var(--bg);border-radius:9px;padding:.3rem;margin-bottom:1.25rem}
-.auth-tab{flex:1;padding:.5rem;text-align:center;border-radius:7px;font-size:.83rem;font-weight:700;cursor:pointer;color:var(--text3);transition:all .15s;border:none;background:none;font-family:inherit}
+.auth-tab{flex:1;padding:.5rem;text-align:center;border-radius:7px;font-size:.83rem;font-weight:700;cursor:pointer;color:var(--text3);border:none;background:none;font-family:inherit}
 .auth-tab.active{background:var(--bg3);color:var(--text)}
 .field{margin-bottom:.9rem}
-.field label{display:block;font-size:.73rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem}
-.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;color:var(--text);font-size:.88rem;outline:none;font-family:inherit;transition:border .15s}
+.field label{display:block;font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:.3rem}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;color:var(--text);font-size:.87rem;outline:none;font-family:inherit}
 .field input:focus,.field select:focus{border-color:var(--purple)}
 .auth-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);font-size:.78rem;padding:.55rem .8rem;border-radius:7px;margin-bottom:.9rem;display:none}
 .auth-err.show{display:block}
 .demo-hint{background:rgba(59,130,246,.07);border:1px dashed rgba(59,130,246,.3);border-radius:8px;padding:.6rem .85rem;font-size:.75rem;color:var(--text2);margin-top:1rem;text-align:center}
 .demo-hint code{color:var(--gold);cursor:pointer}
 .btn-full{width:100%;justify-content:center;padding:.7rem}
-.nav{display:flex;gap:.35rem;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:.25rem}
-.nav-btn{padding:.6rem 1.2rem;border-radius:9px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:.4rem}
-.nav-btn:hover{border-color:var(--cyan);color:var(--text)}
+.nav{display:flex;gap:.35rem;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:.2rem}
+.nav-btn{padding:.6rem 1.05rem;border-radius:9px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
 .nav-btn.active{background:var(--accent);border-color:transparent;color:#fff}
-.nav-btn .lock{font-size:.7rem}
 .panel{display:none}
 .panel.active{display:block}
 .panel-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:1.25rem}
-.panel-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:1.1rem;flex-wrap:wrap}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
 .panel-title{font-weight:800;font-size:1.05rem;display:flex;align-items:center;gap:.5rem}
-.panel-tools{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
-.panel-tools select{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:.45rem .7rem;color:var(--text2);font-size:.78rem;outline:none;font-family:inherit}
+.panel-tools{display:flex;gap:.45rem;flex-wrap:wrap;align-items:center}
+.panel-tools select,.panel-tools input[type=text]{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:.45rem .7rem;color:var(--text2);font-size:.78rem;outline:none;font-family:inherit}
+.panel-tools input[type=text]{min-width:150px}
+.cache-badge{font-size:.68rem;font-weight:800;padding:.25rem .6rem;border-radius:5px;background:var(--bg3);color:var(--text3);font-family:monospace}
+.cache-badge.hit{background:rgba(16,185,129,.15);color:var(--green)}
+.cache-badge.miss{background:rgba(245,158,11,.15);color:var(--orange)}
 .tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
-table{width:100%;border-collapse:collapse;font-size:.83rem;min-width:560px}
-th{text-align:left;padding:.65rem .9rem;background:var(--bg3);color:var(--text3);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;font-weight:800;border-bottom:1px solid var(--border)}
-td{padding:.65rem .9rem;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.83rem;min-width:600px}
+th{text-align:left;padding:.6rem .85rem;background:var(--bg3);color:var(--text3);font-size:.66rem;text-transform:uppercase;font-weight:800;border-bottom:1px solid var(--border)}
+td{padding:.6rem .85rem;border-bottom:1px solid var(--border)}
 tr:last-child td{border-bottom:none}
 tbody tr:hover{background:rgba(168,85,247,.04)}
-.tag{display:inline-block;padding:.15rem .55rem;border-radius:5px;font-size:.68rem;font-weight:700;background:rgba(6,182,212,.12);color:var(--cyan)}
+.tag{display:inline-block;padding:.13rem .5rem;border-radius:5px;font-size:.66rem;font-weight:700;background:rgba(6,182,212,.12);color:var(--cyan)}
 .price{color:var(--green);font-weight:700;font-family:monospace}
-.actions{display:flex;gap:.35rem}
-.empty{padding:2.5rem;text-align:center;color:var(--text3);font-size:.85rem}
-.empty .big{font-size:2.5rem;margin-bottom:.5rem}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.9rem}
-.stat{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem;text-align:center;transition:all .2s}
-.stat:hover{transform:translateY(-3px);border-color:var(--purple)}
-.stat-icon{font-size:1.6rem;margin-bottom:.4rem}
-.stat-val{font-size:1.6rem;font-weight:900;background:var(--accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.stat-lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem;font-weight:700}
-.lock-panel{text-align:center;padding:3rem 1.5rem}
-.lock-panel .big{font-size:3rem;margin-bottom:.75rem}
-.lock-panel h3{font-size:1.05rem;margin-bottom:.35rem}
-.lock-panel p{font-size:.83rem;color:var(--text2);margin-bottom:1.1rem}
-.profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.9rem}
+.actions{display:flex;gap:.3rem}
+.empty{padding:2.2rem;text-align:center;color:var(--text3);font-size:.85rem}
+.empty .big{font-size:2.3rem;margin-bottom:.4rem}
+.pager{display:flex;gap:.4rem;align-items:center;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.pager button{background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:34px;height:32px;border-radius:7px;cursor:pointer;font-size:.9rem;font-weight:700}
+.pager button:hover{border-color:var(--cyan);color:var(--cyan)}
+.pager span{font-size:.78rem;color:var(--text3);padding:0 .6rem}
+.wh-form{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-bottom:1.1rem}
+.wh-form-title{font-weight:800;font-size:.9rem;margin-bottom:.7rem}
+.wh-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.7rem}
+.wh-row input{flex:1;min-width:240px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:.55rem .8rem;color:var(--text);font-size:.82rem;outline:none;font-family:monospace}
+.ev-opts{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:.85rem}
+.ev-opt{display:flex;align-items:center;gap:.35rem;font-size:.76rem;color:var(--text2);cursor:pointer}
+.ev-opt input{accent-color:var(--purple)}
+.secret-txt{font-family:monospace;font-size:.68rem;color:var(--gold);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.9rem}
+.stat{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.15rem;text-align:center}
+.stat-icon{font-size:1.5rem;margin-bottom:.35rem}
+.stat-val{font-size:1.5rem;font-weight:900;background:var(--accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:.66rem;color:var(--text3);text-transform:uppercase;margin-top:.2rem;font-weight:700}
+.lock-panel{text-align:center;padding:2.6rem 1.5rem}
+.lock-panel .big{font-size:2.8rem;margin-bottom:.7rem}
+.lock-panel h3{font-size:1.02rem;margin-bottom:.3rem}
+.lock-panel p{font-size:.82rem;color:var(--text2);margin-bottom:1rem}
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.9rem}
 .prof-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem}
-.prof-lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;font-weight:800;letter-spacing:.05em;margin-bottom:.25rem}
-.prof-val{font-size:.92rem;font-weight:600;word-break:break-all}
-.token-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.7rem;font-family:monospace;font-size:.68rem;color:var(--gold);word-break:break-all;margin-top:.75rem;display:none;max-height:110px;overflow:auto}
+.prof-lbl{font-size:.66rem;color:var(--text3);text-transform:uppercase;font-weight:800;margin-bottom:.25rem}
+.prof-val{font-size:.9rem;font-weight:600;word-break:break-all}
+.token-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.7rem;font-family:monospace;font-size:.66rem;color:var(--gold);word-break:break-all;margin-top:.75rem;display:none;max-height:100px;overflow:auto}
 .token-box.show{display:block}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
 .modal-bg.show{display:flex}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.5rem;width:100%;max-width:430px;max-height:90vh;overflow-y:auto}
-.modal-title{font-weight:800;font-size:1.05rem;margin-bottom:1.1rem;display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-weight:800;font-size:1.02rem;margin-bottom:1.05rem;display:flex;justify-content:space-between}
 .modal-x{background:none;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer}
-.modal-x:hover{color:var(--red)}
 .modal-actions{display:flex;gap:.5rem;margin-top:1.1rem}
 .modal-actions .btn{flex:1;justify-content:center}
 .toasts{position:fixed;bottom:1.25rem;right:1.25rem;z-index:300;display:flex;flex-direction:column;gap:.5rem;max-width:340px}
-.tst{background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:.7rem 1.15rem;border-radius:9px;font-size:.82rem;box-shadow:0 8px 24px rgba(0,0,0,.45);animation:slideIn .25s;display:flex;gap:.5rem;align-items:center}
+.tst{background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:.7rem 1.1rem;border-radius:9px;font-size:.81rem;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .tst.err{border-color:var(--red);color:var(--red)}
-@keyframes slideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
-.footer{text-align:center;color:var(--text3);font-size:.75rem;padding:1.5rem 0}
-.footer b{color:var(--text2)}
-@media(max-width:640px){.wrap{padding:1rem}header{padding:1rem}.url-box{min-width:100%}}
+.footer{text-align:center;color:var(--text3);font-size:.73rem;padding:1.4rem 0}
+@media(max-width:640px){.wrap{padding:1rem}}
 </style>
 </head>
 <body>
-
 <div class="wrap">
 
 <header>
   <div class="logo">
     <div class="logo-icon">🌳</div>
-    <div>nexrouter<small>DASHBOARD v1.0</small></div>
+    <div>nexrouter<small>DASHBOARD v2.0</small></div>
   </div>
   <div class="url-box">
-    <input type="text" id="apiUrl" placeholder="https://nexrouter-production-xxxx.up.railway.app" spellcheck="false">
+    <input type="text" id="apiUrl" placeholder="https://nexrouter.up.railway.app" spellcheck="false">
     <button class="btn btn-acc" id="connectBtn" onclick="connect()">⚡ Connect</button>
   </div>
   <div class="conn-status">
@@ -137,8 +144,8 @@ tbody tr:hover{background:rgba(168,85,247,.04)}
 <div class="userbar" id="userbar">
   <div class="avatar" id="ubAvatar">?</div>
   <div class="userbar-info">
-    <div class="userbar-name" id="ubName">—</div>
-    <div class="userbar-email" id="ubEmail">—</div>
+    <div class="userbar-name" id="ubName">-</div>
+    <div class="userbar-email" id="ubEmail">-</div>
   </div>
   <span class="userbar-badge">🔑 Authenticated</span>
   <button class="btn btn-red btn-sm" onclick="logout()">🚪 Logout</button>
@@ -146,57 +153,60 @@ tbody tr:hover{background:rgba(168,85,247,.04)}
 
 <div class="auth-card" id="authCard">
   <div class="auth-title" id="authTitle">Masuk ke API Anda</div>
-  <div class="auth-sub">Login atau register untuk mengakses fitur 🔒 protected</div>
+  <div class="auth-sub">Login atau register untuk membuka fitur 🔒</div>
   <div class="auth-tabs">
     <button class="auth-tab active" id="tabLogin" onclick="switchAuth('login')">Login</button>
     <button class="auth-tab" id="tabRegister" onclick="switchAuth('register')">Register</button>
   </div>
   <div class="auth-err" id="authErr"></div>
   <div id="regFields" style="display:none">
-    <div class="field">
-      <label>Nama</label>
-      <input type="text" id="regName" placeholder="Nama Anda">
-    </div>
+    <div class="field"><label>Nama</label><input type="text" id="regName" placeholder="Nama Anda"></div>
   </div>
-  <div class="field">
-    <label>Email</label>
-    <input type="email" id="authEmail" placeholder="john@example.com">
-  </div>
-  <div class="field">
-    <label>Password</label>
-    <input type="password" id="authPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()">
-  </div>
+  <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="john@example.com"></div>
+  <div class="field"><label>Password</label><input type="password" id="authPass" placeholder="........" onkeydown="if(event.key==='Enter')submitAuth()"></div>
   <button class="btn btn-acc btn-full" id="authBtn" onclick="submitAuth()">🔑 Login</button>
-  <div class="demo-hint">
-    Akun demo (seed): <code onclick="fillDemo()">john@example.com / password123</code> ← klik untuk isi otomatis
-  </div>
+  <div class="demo-hint">Akun demo: <code onclick="fillDemo()">john@example.com / password123</code> - klik untuk isi otomatis</div>
 </div>
 
 <div class="nav">
   <button class="nav-btn active" data-tab="products" onclick="switchTab('products',this)">🛒 Products</button>
   <button class="nav-btn" data-tab="users" onclick="switchTab('users',this)">👥 Users</button>
-  <button class="nav-btn" data-tab="stats" onclick="switchTab('stats',this)">📊 Stats <span class="lock">🔒</span></button>
-  <button class="nav-btn" data-tab="profile" onclick="switchTab('profile',this)">👤 Profile <span class="lock">🔒</span></button>
+  <button class="nav-btn" data-tab="webhooks" onclick="switchTab('webhooks',this)">🪝 Webhooks 🔒</button>
+  <button class="nav-btn" data-tab="stats" onclick="switchTab('stats',this)">📊 Stats 🔒</button>
+  <button class="nav-btn" data-tab="profile" onclick="switchTab('profile',this)">👤 Profile 🔒</button>
 </div>
 
 <div class="panel active" id="panel-products">
   <div class="panel-card">
     <div class="panel-head">
-      <div class="panel-title">🛒 Products <span class="tag" id="prodCount">0</span></div>
+      <div class="panel-title">🛒 Products <span class="tag" id="prodCount">0</span> <span class="cache-badge" id="xcache">X-Cache: -</span></div>
       <div class="panel-tools">
-        <select id="catFilter" onchange="loadProducts()">
+        <input type="text" id="prodSearch" placeholder="cari nama..." onkeydown="if(event.key==='Enter')doProdSearch()">
+        <select id="catFilter" onchange="prodState.category=this.value;prodState.page=1;loadProducts()">
           <option value="">Semua kategori</option>
         </select>
-        <button class="btn btn-ghost btn-sm" onclick="loadProducts()">🔄 Refresh</button>
-        <button class="btn btn-green btn-sm" id="btnNewProd" onclick="openProductModal()" style="display:none">＋ Tambah Product</button>
+        <select id="sortSel" onchange="prodState.sort=this.value;prodState.page=1;loadProducts()">
+          <option value="id">sort: id</option>
+          <option value="name">sort: name</option>
+          <option value="price">sort: price</option>
+          <option value="stock">sort: stock</option>
+          <option value="category">sort: category</option>
+        </select>
+        <select id="orderSel" onchange="prodState.order=this.value;prodState.page=1;loadProducts()">
+          <option value="asc">asc ↑</option>
+          <option value="desc">desc ↓</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="doProdSearch()">🔎 Cari</button>
+        <button class="btn btn-green btn-sm" id="btnNewProd" onclick="openProductModal()" style="display:none">＋ Tambah</button>
       </div>
     </div>
     <div class="tbl-wrap">
       <table>
         <thead><tr><th>ID</th><th>Nama</th><th>Harga</th><th>Stock</th><th>Kategori</th><th id="thActions" style="display:none">Aksi</th></tr></thead>
-        <tbody id="prodBody"><tr><td colspan="6" class="empty">Connect ke API dulu...</td></tr></tbody>
+        <tbody id="prodBody"><tr><td colspan="6" class="empty">Memuat...</td></tr></tbody>
       </table>
     </div>
+    <div id="prodPager"></div>
   </div>
 </div>
 
@@ -205,15 +215,27 @@ tbody tr:hover{background:rgba(168,85,247,.04)}
     <div class="panel-head">
       <div class="panel-title">👥 Users <span class="tag" id="userCount">0</span></div>
       <div class="panel-tools">
-        <button class="btn btn-ghost btn-sm" onclick="loadUsers()">🔄 Refresh</button>
+        <input type="text" id="userSearch" placeholder="cari nama/email..." onkeydown="if(event.key==='Enter')doUserSearch()">
+        <button class="btn btn-ghost btn-sm" onclick="doUserSearch()">🔎 Cari</button>
       </div>
     </div>
     <div class="tbl-wrap">
       <table>
         <thead><tr><th>ID</th><th>Nama</th><th>Email</th></tr></thead>
-        <tbody id="userBody"><tr><td colspan="3" class="empty">Connect ke API dulu...</td></tr></tbody>
+        <tbody id="userBody"><tr><td colspan="3" class="empty">Memuat...</td></tr></tbody>
       </table>
     </div>
+    <div id="userPager"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-webhooks">
+  <div class="panel-card">
+    <div class="panel-head">
+      <div class="panel-title">🪝 Webhooks <span class="tag" id="whCount">0</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadWebhooks()">🔄 Refresh</button>
+    </div>
+    <div id="whContent"></div>
   </div>
 </div>
 
@@ -237,18 +259,12 @@ tbody tr:hover{background:rgba(168,85,247,.04)}
   </div>
 </div>
 
-<div class="footer">
-  <b>nexrouter Dashboard</b> — frontend untuk API Anda · token tersimpan di localStorage browser
-</div>
-
+<div class="footer"><b>nexrouter Dashboard v2</b> - pagination, search, sort, webhooks, cache badge</div>
 </div>
 
 <div class="modal-bg" id="prodModal">
   <div class="modal">
-    <div class="modal-title">
-      <span id="pmTitle">＋ Tambah Product</span>
-      <button class="modal-x" onclick="closeProductModal()">✕</button>
-    </div>
+    <div class="modal-title"><span id="pmTitle">＋ Tambah Product</span><button class="modal-x" onclick="closeProductModal()">✕</button></div>
     <input type="hidden" id="pmId">
     <div class="field"><label>Nama *</label><input type="text" id="pmName" placeholder="Mechanical Keyboard"></div>
     <div class="field"><label>Harga (Rp) *</label><input type="number" id="pmPrice" placeholder="750000" min="1" step="0.01"></div>
@@ -260,6 +276,7 @@ tbody tr:hover{background:rgba(168,85,247,.04)}
         <option value="furniture">furniture</option>
         <option value="clothing">clothing</option>
         <option value="food">food</option>
+        <option value="test">test</option>
       </select>
     </div>
     <div class="modal-actions">
@@ -272,61 +289,61 @@ tbody tr:hover{background:rgba(168,85,247,.04)}
 <div class="toasts" id="toasts"></div>
 
 <script nonce="">
-const LS = {api:'nr_api', token:'nr_token', user:'nr_user'};
-let API = localStorage.getItem(LS.api) || (location.protocol.startsWith('http') ? location.origin : '');
-let TOKEN = localStorage.getItem(LS.token) || '';
-let USER = null;
+var LS = {api:'nr_api', token:'nr_token', user:'nr_user'};
+var API = localStorage.getItem(LS.api) || (location.protocol.indexOf('http')===0 ? location.origin : '');
+var TOKEN = localStorage.getItem(LS.token) || '';
+var USER = null;
 try { USER = JSON.parse(localStorage.getItem(LS.user) || 'null'); } catch(e){}
-let authMode = 'login';
-let productsCache = [];
+var authMode = 'login';
+var productsCache = [];
+var prodState = {page:1, limit:10, search:'', category:'', sort:'id', order:'asc', totalPages:1, total:0};
+var userState = {page:1, limit:10, search:'', totalPages:1, total:0};
+var EV_LIST = ['product.created','product.updated','product.deleted','user.registered','webhook.test'];
 
-const rupiah = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
-const esc = s => String(s===undefined||s===null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+var rupiah = function(n){ return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0); };
+var esc = function(s){ return String(s===undefined||s===null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
-async function api(method, path, body){
-  if(!API){ toast('Isi URL API dulu lalu klik Connect', true); throw {status:0}; }
-  const headers = {};
+async function apiFull(method, path, body){
+  if(!API){ toast('Isi URL API dulu lalu klik Connect', true); throw {status:0,data:{}}; }
+  var headers = {};
   if(body) headers['Content-Type'] = 'application/json';
   if(TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
-  let res;
+  var res;
   try {
-    res = await fetch(API.replace(/\/+$/,'') + path, {method, headers, body: body?JSON.stringify(body):undefined, cache:'no-store'});
+    res = await fetch(API.replace(/\/+$/,'') + path, {method:method, headers:headers, body: body?JSON.stringify(body):undefined, cache:'no-store'});
   } catch(e){
     setConn(false, 'unreachable');
-    toast('Tidak bisa connect ke API: ' + e.message, true);
+    toast('Tidak bisa connect: ' + e.message, true);
     throw {status:0, data:{error:e.message}};
   }
-  const ct = res.headers.get('content-type')||'';
-  const data = ct.includes('json') ? await res.json() : await res.text();
+  var ct = res.headers.get('content-type')||'';
+  var data = ct.indexOf('json')>=0 ? await res.json() : await res.text();
   if(!res.ok){
-    if(res.status===401 && TOKEN){ doLogout(false); toast('Sesi berakhir / token invalid — login ulang', true); }
-    throw {status:res.status, data};
+    if(res.status===401 && TOKEN){ doLogout(false); toast('Sesi berakhir / token invalid - login ulang', true); }
+    throw {status:res.status, data:data, headers:res.headers};
   }
   setConn(true);
-  return data;
+  return {status:res.status, data:data, headers:res.headers};
 }
+async function api(method, path, body){ var r = await apiFull(method, path, body); return r.data; }
 
 function setConn(ok, extra){
-  const dot = document.getElementById('connDot');
-  const txt = document.getElementById('connText');
-  dot.className = 'conn-dot ' + (ok ? 'on' : 'off');
-  txt.textContent = ok ? 'connected' : (extra || 'disconnected');
+  document.getElementById('connDot').className = 'conn-dot ' + (ok ? 'on' : 'off');
+  document.getElementById('connText').textContent = ok ? 'connected' : (extra || 'disconnected');
 }
 
 async function connect(){
-  const input = document.getElementById('apiUrl');
-  API = input.value.trim();
-  if(!API){ toast('URL API kosong!', true); return; }
+  API = document.getElementById('apiUrl').value.trim();
+  if(!API){ toast('URL kosong!', true); return; }
   localStorage.setItem(LS.api, API);
-  const btn = document.getElementById('connectBtn');
-  btn.disabled = true; btn.textContent = '⏳...';
+  var btn = document.getElementById('connectBtn');
+  btn.disabled = true;
   try{
-    const h = await api('GET','/health');
-    setConn(true);
-    toast('✅ Connected! v' + (h.version||'?') + ' · ' + (h.database||'') + ' · ' + (h.auth||''));
+    var h = await api('GET','/health');
+    toast('Connected! v' + (h.version||'?') + ' cache=' + (h.cache||'-'));
     refreshAll();
   }catch(e){ setConn(false); }
-  btn.disabled = false; btn.textContent = '⚡ Connect';
+  btn.disabled = false;
 }
 
 function switchAuth(mode){
@@ -335,60 +352,57 @@ function switchAuth(mode){
   document.getElementById('tabRegister').classList.toggle('active', mode==='register');
   document.getElementById('regFields').style.display = mode==='register' ? 'block' : 'none';
   document.getElementById('authBtn').textContent = mode==='login' ? '🔑 Login' : '📝 Register';
-  document.getElementById('authTitle').textContent = mode==='login' ? 'Masuk ke API Anda' : 'Buat Akun Baru';
   hideAuthErr();
 }
 function fillDemo(){
   switchAuth('login');
   document.getElementById('authEmail').value = 'john@example.com';
   document.getElementById('authPass').value = 'password123';
-  toast('Demo credentials terisi — klik Login');
 }
-function showAuthErr(msg){ const el = document.getElementById('authErr'); el.textContent = msg; el.classList.add('show'); }
+function showAuthErr(m){ var e=document.getElementById('authErr'); e.textContent=m; e.classList.add('show'); }
 function hideAuthErr(){ document.getElementById('authErr').classList.remove('show'); }
 
 async function submitAuth(){
-  const email = document.getElementById('authEmail').value.trim();
-  const pass = document.getElementById('authPass').value;
+  var email = document.getElementById('authEmail').value.trim();
+  var pass = document.getElementById('authPass').value;
   hideAuthErr();
   if(!email || !pass){ showAuthErr('Email dan password wajib diisi'); return; }
-  const btn = document.getElementById('authBtn');
+  var btn = document.getElementById('authBtn');
   btn.disabled = true;
   try{
-    let data;
+    var data;
     if(authMode==='login'){
-      data = await api('POST','/api/v1/auth/login',{email,password:pass});
+      data = await api('POST','/api/v1/auth/login',{email:email,password:pass});
     } else {
-      const name = document.getElementById('regName').value.trim();
+      var name = document.getElementById('regName').value.trim();
       if(!name){ showAuthErr('Nama wajib diisi'); btn.disabled=false; return; }
-      data = await api('POST','/api/v1/auth/register',{name,email,password:pass});
+      data = await api('POST','/api/v1/auth/register',{name:name,email:email,password:pass});
     }
     TOKEN = data.token;
     USER = data.user || null;
     localStorage.setItem(LS.token, TOKEN);
     if(USER) localStorage.setItem(LS.user, JSON.stringify(USER));
     document.getElementById('authPass').value = '';
-    toast(authMode==='login' ? '🎉 Welcome back!' : '🎉 Akun dibuat + auto login!');
+    toast('🎉 Berhasil!');
     renderAuthState();
     refreshAll();
   }catch(e){
-    const msg = (e.data && (e.data.error || (typeof e.data==='string'?e.data:''))) || 'Gagal (status '+(e.status||'?')+')';
-    showAuthErr(msg);
+    showAuthErr((e.data && e.data.error) || 'Gagal (status '+(e.status||'?')+')');
   }
   btn.disabled = false;
 }
 
 function logout(){ doLogout(true); }
-function doLogout(showMsg){
+function doLogout(msg){
   TOKEN=''; USER=null;
   localStorage.removeItem(LS.token); localStorage.removeItem(LS.user);
   renderAuthState();
-  if(showMsg) toast('👋 Logged out');
+  if(msg) toast('👋 Logged out');
   refreshAll();
 }
 
 function renderAuthState(){
-  const logged = !!TOKEN;
+  var logged = !!TOKEN;
   document.getElementById('authCard').classList.toggle('hide', logged);
   document.getElementById('userbar').classList.toggle('show', logged);
   document.getElementById('btnNewProd').style.display = logged ? 'inline-flex' : 'none';
@@ -399,56 +413,69 @@ function renderAuthState(){
     document.getElementById('ubEmail').textContent = USER.email || '';
   }
   renderProducts();
-  const active = document.querySelector('.nav-btn.active');
+  var active = document.querySelector('.nav-btn.active');
   if(active){
-    const t = active.dataset.tab;
+    var t = active.dataset.tab;
+    if(t==='webhooks') loadWebhooks();
     if(t==='stats') loadStats();
     if(t==='profile') loadProfile();
   }
 }
 
 function switchTab(tab, btn){
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active')});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   btn.classList.add('active');
   document.getElementById('panel-'+tab).classList.add('active');
   if(tab==='products') loadProducts();
   if(tab==='users') loadUsers();
+  if(tab==='webhooks') loadWebhooks();
   if(tab==='stats') loadStats();
   if(tab==='profile') loadProfile();
 }
 
+function doProdSearch(){ prodState.search = document.getElementById('prodSearch').value.trim(); prodState.page = 1; loadProducts(); }
+function prodPage(n){ if(n<1) n=1; if(n>prodState.totalPages) n=prodState.totalPages; prodState.page=n; loadProducts(); }
+
 async function loadProducts(){
-  const body = document.getElementById('prodBody');
-  body.innerHTML = '<tr><td colspan="6" class="empty">⏳ Loading...</td></tr>';
-  const cat = document.getElementById('catFilter').value;
+  var body = document.getElementById('prodBody');
+  var q = 'page='+prodState.page+'&limit='+prodState.limit+'&sort='+prodState.sort+'&order='+prodState.order;
+  if(prodState.search) q += '&search='+encodeURIComponent(prodState.search);
+  if(prodState.category) q += '&category='+encodeURIComponent(prodState.category);
   try{
-    const q = cat ? '?category='+encodeURIComponent(cat) : '';
-    const data = await api('GET','/api/v1/products'+q);
-    productsCache = data.data || [];
-    const all = document.getElementById('catFilter');
-    const cur = all.value;
-    const cats = [];
-    (data.data||[]).forEach(p=>{ if(p.category && cats.indexOf(p.category)===-1) cats.push(p.category); });
-    all.innerHTML = '<option value="">Semua kategori</option>' + cats.map(c=>'<option value="'+esc(c)+'"'+(c===cur?' selected':'')+'>'+esc(c)+'</option>').join('');
-    if(cat && cats.indexOf(cat)===-1) all.innerHTML += '<option value="'+esc(cat)+'" selected>'+esc(cat)+'</option>';
+    var res = await apiFull('GET','/api/v1/products?'+q);
+    var d = res.data;
+    productsCache = d.data || [];
+    prodState.total = d.pagination ? d.pagination.total : productsCache.length;
+    prodState.totalPages = d.pagination ? d.pagination.total_pages : 1;
+    var xc = res.headers.get('X-Cache') || '-';
+    var badge = document.getElementById('xcache');
+    badge.textContent = 'X-Cache: ' + xc;
+    badge.className = 'cache-badge ' + (xc==='HIT' ? 'hit' : (xc==='MISS' ? 'miss' : ''));
+    var all = document.getElementById('catFilter');
+    var cur = prodState.category;
+    var cats = [];
+    productsCache.forEach(function(p){ if(p.category && cats.indexOf(p.category)===-1) cats.push(p.category); });
+    all.innerHTML = '<option value="">Semua kategori</option>' + cats.map(function(c){ return '<option value="'+esc(c)+'"'+(c===cur?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
+    if(cur && cats.indexOf(cur)===-1) all.innerHTML += '<option value="'+esc(cur)+'" selected>'+esc(cur)+'</option>';
     renderProducts();
+    renderProdPager();
   }catch(e){
-    body.innerHTML = '<tr><td colspan="6" class="empty"><div class="big">⚠️</div>Gagal load</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="empty"><div class="big">⚠️</div>Gagal load products</td></tr>';
   }
 }
 
 function renderProducts(){
-  const body = document.getElementById('prodBody');
-  const logged = !!TOKEN;
+  var body = document.getElementById('prodBody');
+  var logged = !!TOKEN;
   document.getElementById('thActions').style.display = logged ? '' : 'none';
-  document.getElementById('prodCount').textContent = productsCache.length;
+  document.getElementById('prodCount').textContent = prodState.total || productsCache.length;
   if(!productsCache.length){
-    body.innerHTML = '<tr><td colspan="'+(logged?6:5)+'" class="empty"><div class="big">📦</div>Belum ada product</td></tr>';
+    body.innerHTML = '<tr><td colspan="'+(logged?6:5)+'" class="empty"><div class="big">📦</div>Tidak ada product (halaman/filter ini)</td></tr>';
     return;
   }
-  body.innerHTML = productsCache.map(p=>{
-    const pj = esc(JSON.stringify(p)).replace(/'/g,"&#39;");
+  body.innerHTML = productsCache.map(function(p){
+    var pj = esc(JSON.stringify(p));
     return '<tr>'
       + '<td style="color:var(--text3);font-family:monospace">'+esc(p.id)+'</td>'
       + '<td><b>'+esc(p.name)+'</b></td>'
@@ -456,12 +483,22 @@ function renderProducts(){
       + '<td><span class="tag">'+esc(p.stock)+' pcs</span></td>'
       + '<td style="color:var(--text2)">'+esc(p.category||'-')+'</td>'
       + (logged ? '<td><div class="actions">'
-        + '<button class="btn btn-ghost btn-sm" onclick="openProductModal(JSON.parse(this.dataset.p))" data-p=\''+pj+'\' style="display:none"></button>'
-        + '<button class="btn btn-ghost btn-sm" onclick=\'openProductModal('+pj+')\'>✏️</button>'
-        + '<button class="btn btn-red btn-sm" onclick="deleteProduct('+p.id+',\''+esc(p.name).replace(/'/g,"\\'")+'\')">🗑️</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick=\'openProductModal('+pj.replace(/&#39;/g,"\\'")+')\'>✏️</button>'
+        + '<button class="btn btn-red btn-sm" onclick="deleteProduct('+p.id+')">🗑️</button>'
         + '</div></td>' : '')
       + '</tr>';
   }).join('');
+}
+
+function renderProdPager(){
+  document.getElementById('prodPager').innerHTML =
+    '<div class="pager">'
+    + '<button onclick="prodPage(1)">«</button>'
+    + '<button onclick="prodPage('+(prodState.page-1)+')">‹</button>'
+    + '<span>Halaman '+prodState.page+' / '+Math.max(1,prodState.totalPages)+' (total '+prodState.total+')</span>'
+    + '<button onclick="prodPage('+(prodState.page+1)+')">›</button>'
+    + '<button onclick="prodPage('+prodState.totalPages+')">»</button>'
+    + '</div>';
 }
 
 function openProductModal(p){
@@ -473,143 +510,206 @@ function openProductModal(p){
   document.getElementById('pmCategory').value = p ? (p.category||'general') : 'general';
   document.getElementById('pmTitle').textContent = p ? ('✏️ Edit Product #'+p.id) : '＋ Tambah Product';
   document.getElementById('prodModal').classList.add('show');
-  setTimeout(()=>document.getElementById('pmName').focus(),100);
 }
 function closeProductModal(){ document.getElementById('prodModal').classList.remove('show'); }
 
 async function saveProduct(){
-  const id = document.getElementById('pmId').value;
-  const name = document.getElementById('pmName').value.trim();
-  const price = parseFloat(document.getElementById('pmPrice').value);
-  const stock = parseInt(document.getElementById('pmStock').value)||0;
-  const category = document.getElementById('pmCategory').value;
-  if(!name || !(price>0)){ toast('Nama & harga (>0) wajib diisi', true); return; }
-  const btn = document.getElementById('pmSave');
-  btn.disabled = true; btn.textContent = '⏳...';
+  var id = document.getElementById('pmId').value;
+  var name = document.getElementById('pmName').value.trim();
+  var price = parseFloat(document.getElementById('pmPrice').value);
+  var stock = parseInt(document.getElementById('pmStock').value)||0;
+  var category = document.getElementById('pmCategory').value;
+  if(!name || !(price>0)){ toast('Nama & harga (>0) wajib', true); return; }
+  var btn = document.getElementById('pmSave');
+  btn.disabled = true;
   try{
-    if(id){
-      await api('PUT','/api/v1/products/'+id,{name,price,stock,category});
-      toast('✅ Product diupdate');
-    } else {
-      await api('POST','/api/v1/products',{name,price,stock,category});
-      toast('✅ Product dibuat');
-    }
+    if(id){ await api('PUT','/api/v1/products/'+id,{name:name,price:price,stock:stock,category:category}); toast('✅ Diupdate'); }
+    else { await api('POST','/api/v1/products',{name:name,price:price,stock:stock,category:category}); toast('✅ Dibuat - webhook product.created terkirim!'); }
     closeProductModal();
     loadProducts();
-  }catch(e){
-    toast('Gagal: '+((e.data&&e.data.error)||e.status), true);
-  }
-  btn.disabled = false; btn.textContent = '💾 Simpan';
+  }catch(e){ toast('Gagal: '+((e.data&&e.data.error)||e.status), true); }
+  btn.disabled = false;
 }
 
-async function deleteProduct(id,name){
-  if(!confirm('Hapus product "'+name+'" (ID '+id+')? Ini permanen di database cloud.')) return;
-  try{
-    await api('DELETE','/api/v1/products/'+id);
-    toast('🗑️ Product dihapus');
-    loadProducts();
-  }catch(e){
-    toast('Gagal hapus: '+((e.data&&e.data.error)||e.status), true);
-  }
+async function deleteProduct(id){
+  if(!confirm('Hapus product ID '+id+'? Permanen di database cloud.')) return;
+  try{ await api('DELETE','/api/v1/products/'+id); toast('🗑️ Dihapus'); loadProducts(); }
+  catch(e){ toast('Gagal: '+((e.data&&e.data.error)||e.status), true); }
 }
+
+function doUserSearch(){ userState.search = document.getElementById('userSearch').value.trim(); userState.page = 1; loadUsers(); }
+function userPage(n){ if(n<1) n=1; if(n>userState.totalPages) n=userState.totalPages; userState.page=n; loadUsers(); }
 
 async function loadUsers(){
-  const body = document.getElementById('userBody');
-  body.innerHTML = '<tr><td colspan="3" class="empty">⏳ Loading...</td></tr>';
+  var body = document.getElementById('userBody');
+  var q = 'page='+userState.page+'&limit='+userState.limit;
+  if(userState.search) q += '&search='+encodeURIComponent(userState.search);
   try{
-    const data = await api('GET','/api/v1/users');
-    const users = data.data||[];
-    document.getElementById('userCount').textContent = users.length;
-    body.innerHTML = users.length ? users.map(u=>
-      '<tr><td style="color:var(--text3);font-family:monospace">'+esc(u.id)+'</td><td><b>'+esc(u.name)+'</b></td><td style="color:var(--text2)">'+esc(u.email)+'</td></tr>'
-    ).join('') : '<tr><td colspan="3" class="empty"><div class="big">👥</div>Belum ada user</td></tr>';
+    var d = await api('GET','/api/v1/users?'+q);
+    var users = d.data||[];
+    userState.total = d.pagination ? d.pagination.total : users.length;
+    userState.totalPages = d.pagination ? d.pagination.total_pages : 1;
+    document.getElementById('userCount').textContent = userState.total;
+    body.innerHTML = users.length ? users.map(function(u){
+      return '<tr><td style="color:var(--text3);font-family:monospace">'+esc(u.id)+'</td><td><b>'+esc(u.name)+'</b></td><td style="color:var(--text2)">'+esc(u.email)+'</td></tr>';
+    }).join('') : '<tr><td colspan="3" class="empty"><div class="big">👥</div>Tidak ada user cocok</td></tr>';
+    document.getElementById('userPager').innerHTML =
+      '<div class="pager">'
+      + '<button onclick="userPage('+(userState.page-1)+')">‹</button>'
+      + '<span>Halaman '+userState.page+' / '+Math.max(1,userState.totalPages)+' (total '+userState.total+')</span>'
+      + '<button onclick="userPage('+(userState.page+1)+')">›</button>'
+      + '</div>';
   }catch(e){
-    body.innerHTML = '<tr><td colspan="3" class="empty"><div class="big">⚠️</div>Gagal load</td></tr>';
+    body.innerHTML = '<tr><td colspan="3" class="empty"><div class="big">⚠️</div>Gagal load users</td></tr>';
   }
 }
 
 function lockHTML(what){
   return '<div class="lock-panel"><div class="big">🔒</div><h3>'+what+' butuh login</h3>'
-    + '<p>Endpoint ini diproteksi JWT — login dulu untuk melihat datanya.</p>'
-    + '<button class="btn btn-acc" onclick="document.getElementById(\'authEmail\').scrollIntoView({behavior:\'smooth\'});document.getElementById(\'authEmail\').focus()">🔑 Login Sekarang</button></div>';
+    + '<p>Endpoint ini diproteksi JWT - login dulu untuk mengakses.</p></div>';
+}
+
+function whFormHTML(){
+  var cbs = EV_LIST.map(function(ev){
+    return '<label class="ev-opt"><input type="checkbox" class="ev-cb" value="'+ev+'" checked> '+ev+'</label>';
+  }).join('');
+  return '<div class="wh-form">'
+    + '<div class="wh-form-title">＋ Subscribe Webhook Baru</div>'
+    + '<div class="wh-row"><input type="text" id="whUrl" placeholder="https://webhook.site/xxxx-xxxx (URL receiver)"></div>'
+    + '<div class="ev-opts">' + cbs + '</div>'
+    + '<button class="btn btn-acc" onclick="createWebhook()">🪝 Subscribe</button>'
+    + '<span style="font-size:.72rem;color:var(--text3);margin-left:.6rem">Tip: pakai webhook.site sebagai receiver untuk testing</span>'
+    + '</div>';
+}
+
+async function loadWebhooks(){
+  var el = document.getElementById('whContent');
+  if(!TOKEN){ el.innerHTML = lockHTML('Webhooks'); return; }
+  el.innerHTML = '<div class="empty">Memuat...</div>';
+  try{
+    var d = await api('GET','/api/v1/webhooks');
+    var items = d.data||[];
+    document.getElementById('whCount').textContent = items.length;
+    var rows = items.length ? items.map(function(w){
+      return '<tr>'
+        + '<td style="font-family:monospace;color:var(--text3)">'+esc(w.id)+'</td>'
+        + '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cyan)">'+esc(w.url)+'</td>'
+        + '<td>'+esc(w.events).split(',').map(function(e){return '<span class="tag" style="margin-right:3px">'+esc(e)+'</span>';}).join('')+'</td>'
+        + '<td><span class="secret-txt" title="klik untuk copy" onclick="copySecret(\''+esc(w.secret)+'\')">'+esc(w.secret.substring(0,12))+'...</span></td>'
+        + '<td><div class="actions">'
+        + '<button class="btn btn-ghost btn-sm" onclick="testWebhook('+w.id+')">🧪 Test</button>'
+        + '<button class="btn btn-red btn-sm" onclick="deleteWebhook('+w.id+')">🗑️</button>'
+        + '</div></td></tr>';
+    }).join('') : '<tr><td colspan="5" class="empty"><div class="big">🪝</div>Belum ada subscription - buat di form atas</td></tr>';
+    el.innerHTML = whFormHTML()
+      + '<div class="tbl-wrap"><table><thead><tr><th>ID</th><th>URL</th><th>Events</th><th>Secret (klik=copy)</th><th>Aksi</th></tr></thead><tbody>'
+      + rows + '</tbody></table></div>';
+  }catch(e){
+    el.innerHTML = '<div class="empty"><div class="big">⚠️</div>Gagal load webhooks</div>';
+  }
+}
+
+function copySecret(s){
+  if(navigator.clipboard) navigator.clipboard.writeText(s).then(function(){ toast('🔑 Secret di-copy!'); });
+  else toast(s);
+}
+
+async function createWebhook(){
+  var url = document.getElementById('whUrl').value.trim();
+  if(!url){ toast('URL receiver kosong!', true); return; }
+  var events = [];
+  document.querySelectorAll('.ev-cb:checked').forEach(function(cb){ events.push(cb.value); });
+  if(!events.length){ toast('Pilih minimal 1 event', true); return; }
+  try{
+    var d = await api('POST','/api/v1/webhooks',{url:url, events:events});
+    toast('🪝 Webhook dibuat! Secret: ' + d.data.secret.substring(0,16) + '... (klik secret di tabel untuk copy)');
+    loadWebhooks();
+  }catch(e){ toast('Gagal: '+((e.data&&e.data.error)||e.status), true); }
+}
+
+async function testWebhook(id){
+  try{
+    await api('POST','/api/v1/webhooks/'+id+'/test');
+    toast('📬 Test event dikirim! Cek receiver (webhook.site) & docker logs');
+  }catch(e){ toast('Gagal: '+((e.data&&e.data.error)||e.status), true); }
+}
+
+async function deleteWebhook(id){
+  if(!confirm('Hapus webhook '+id+'?')) return;
+  try{ await api('DELETE','/api/v1/webhooks/'+id); toast('🗑️ Webhook dihapus'); loadWebhooks(); }
+  catch(e){ toast('Gagal: '+((e.data&&e.data.error)||e.status), true); }
 }
 
 async function loadStats(){
-  const el = document.getElementById('statsContent');
+  var el = document.getElementById('statsContent');
   if(!TOKEN){ el.innerHTML = lockHTML('Stats'); return; }
-  el.innerHTML = '<div class="empty">⏳ Loading...</div>';
   try{
-    const s = await api('GET','/api/v1/stats');
+    var s = await api('GET','/api/v1/stats');
     el.innerHTML = '<div class="stat-grid">'
       + '<div class="stat"><div class="stat-icon">👥</div><div class="stat-val">'+s.users+'</div><div class="stat-lbl">Users</div></div>'
       + '<div class="stat"><div class="stat-icon">📦</div><div class="stat-val">'+s.products+'</div><div class="stat-lbl">Products</div></div>'
       + '<div class="stat"><div class="stat-icon">🏷️</div><div class="stat-val">'+s.total_stock+'</div><div class="stat-lbl">Total Stock</div></div>'
-      + '<div class="stat"><div class="stat-icon">💰</div><div class="stat-val" style="font-size:1.15rem">'+rupiah(s.inventory_value)+'</div><div class="stat-lbl">Inventory Value</div></div>'
+      + '<div class="stat"><div class="stat-icon">💰</div><div class="stat-val" style="font-size:1.05rem">'+rupiah(s.inventory_value)+'</div><div class="stat-lbl">Inventory Value</div></div>'
       + '</div>';
-  }catch(e){
-    el.innerHTML = '<div class="empty"><div class="big">⚠️</div>Gagal load stats</div>';
-  }
+  }catch(e){ el.innerHTML = '<div class="empty"><div class="big">⚠️</div>Gagal load stats</div>'; }
 }
 
 async function loadProfile(){
-  const el = document.getElementById('profileContent');
+  var el = document.getElementById('profileContent');
   if(!TOKEN){ el.innerHTML = lockHTML('Profile'); return; }
-  el.innerHTML = '<div class="empty">⏳ Loading...</div>';
   try{
-    const me = await api('GET','/api/v1/auth/me');
-    const u = me.user||{};
-    if(u.email && USER){ USER = {id:USER.id, name:u.name, email:u.email}; localStorage.setItem(LS.user, JSON.stringify(USER)); renderAuthState(); }
+    var me = await api('GET','/api/v1/auth/me');
+    var u = me.user||{};
     el.innerHTML = '<div class="profile-grid">'
       + '<div class="prof-item"><div class="prof-lbl">User ID</div><div class="prof-val">'+esc(u.id)+'</div></div>'
       + '<div class="prof-item"><div class="prof-lbl">Nama</div><div class="prof-val">'+esc(u.name)+'</div></div>'
       + '<div class="prof-item"><div class="prof-lbl">Email</div><div class="prof-val">'+esc(u.email)+'</div></div>'
       + '<div class="prof-item"><div class="prof-lbl">Token Expired</div><div class="prof-val">'+esc(me.token_expires_at||'-')+'</div></div>'
       + '</div>'
-      + '<div style="margin-top:1rem"><button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'tokBox\').classList.toggle(\'show\')">🎫 Lihat / sembunyikan JWT token</button>'
+      + '<div style="margin-top:1rem"><button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'tokBox\').classList.toggle(\'show\')">🎫 Lihat JWT token</button>'
       + '<div class="token-box" id="tokBox">'+esc(TOKEN)+'</div></div>';
-  }catch(e){
-    el.innerHTML = '<div class="empty"><div class="big">⚠️</div>Gagal load profile</div>';
-  }
+  }catch(e){ el.innerHTML = '<div class="empty"><div class="big">⚠️</div>Gagal load profile</div>'; }
 }
 
 function refreshAll(){
-  if(document.getElementById('panel-products').classList.contains('active')) loadProducts();
-  if(document.getElementById('panel-users').classList.contains('active')) loadUsers();
-  if(document.getElementById('panel-stats').classList.contains('active')) loadStats();
-  if(document.getElementById('panel-profile').classList.contains('active')) loadProfile();
+  var active = document.querySelector('.nav-btn.active');
+  var t = active ? active.dataset.tab : 'products';
+  if(t==='products') loadProducts();
+  if(t==='users') loadUsers();
+  if(t==='webhooks') loadWebhooks();
+  if(t==='stats') loadStats();
+  if(t==='profile') loadProfile();
 }
 
 function toast(msg, isErr){
-  const box = document.getElementById('toasts');
-  const el = document.createElement('div');
+  var box = document.getElementById('toasts');
+  var el = document.createElement('div');
   el.className = 'tst' + (isErr?' err':'');
   el.textContent = msg;
   box.appendChild(el);
-  setTimeout(()=>{ el.style.transition='opacity .3s'; el.style.opacity='0'; setTimeout(()=>el.remove(),300); }, 3200);
+  setTimeout(function(){ el.remove(); }, 3600);
 }
 
-document.getElementById('prodModal').addEventListener('click', e=>{ if(e.target.id==='prodModal') closeProductModal(); });
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeProductModal(); });
+document.getElementById('prodModal').addEventListener('click', function(e){ if(e.target.id==='prodModal') closeProductModal(); });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeProductModal(); });
 
 (function init(){
   document.getElementById('apiUrl').value = API || '';
   renderAuthState();
   if(API){
     fetch(API.replace(/\/+$/,'')+'/health',{cache:'no-store'})
-      .then(r=>r.json())
-      .then(h=>{ setConn(true); toast('✅ Connected ke v'+(h.version||'?')); refreshAll(); })
-      .catch(()=>{ setConn(false); });
-  } else {
-    setConn(false,'set API URL');
-  }
+      .then(function(r){return r.json();})
+      .then(function(h){ setConn(true); toast('✅ Connected v'+(h.version||'?')); refreshAll(); })
+      .catch(function(){ setConn(false); });
+  } else setConn(false,'set API URL');
   if(TOKEN){
     fetch(API.replace(/\/+$/,'')+'/api/v1/auth/me',{headers:{'Authorization':'Bearer '+TOKEN},cache:'no-store'})
-      .then(r=>{ if(!r.ok && r.status===401) doLogout(false); })
-      .catch(()=>{});
+      .then(function(r){ if(!r.ok && r.status===401) doLogout(false); })
+      .catch(function(){});
   }
   loadProducts(); loadUsers();
 })();
 </script>
 
-
-
+</body>
+</html>
