@@ -66,7 +66,7 @@ if DB == nil {
 return nil
 }
 rows, err := DB.Query(
-"SELECT sender, text, strftime('%H:%M:%S', created_at) FROM messages WHERE room = ? ORDER BY id DESC LIMIT ?",
+"SELECT id, sender, text, strftime('%H:%M:%S', created_at) FROM messages WHERE room = ? ORDER BY id DESC LIMIT ?",
 room, limit,
 )
 if err != nil {
