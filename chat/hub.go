@@ -14,6 +14,8 @@ Room string `json:"room"`
 Text string `json:"text"`
 Time string `json:"time"`
 	Verified bool `json:"verified,omitempty"`
+	To    string `json:"to,omitempty"`
+	Admin bool   `json:"admin,omitempty"`
 }
 
 // RoomInfo describes a room for the REST API
@@ -28,6 +30,7 @@ Name string
 Room string
 Send chan []byte
 	Verified bool
+	IsAdmin bool
 }
 
 // Hub manages rooms, clients, broadcast and history
@@ -84,7 +87,7 @@ h.store(Message{Type: "leave", From: c.Name, Room: c.Room, Text: c.Name + " left
 
 // Broadcast sends a chat message from a client to the whole room
 func (h *Hub) Broadcast(c *Client, text string) {
-h.store(Message{Type: "message", From: c.Name, Room: c.Room, Text: text, Time: nowStr(), Verified: c.Verified})
+h.store(Message{Type: "message", From: c.Name, Room: c.Room, Text: text, Time: nowStr(), Verified: c.Verified, Admin: c.IsAdmin})
 }
 
 // store appends to history and fans out to room members (non-blocking)

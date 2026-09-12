@@ -1,7 +1,8 @@
 package main
 
 import (
-"encoding/json"
+"bytes"
+	"encoding/json"
 	"log"
 "net/http"
 "os"
@@ -57,6 +58,10 @@ body{background:#0a0a0f;color:#e4e4e7;font-family:-apple-system,'Segoe UI',sans-
 .msg{max-width:75%;padding:.5rem .8rem;border-radius:12px;font-size:.85rem;display:flex;flex-direction:column;gap:.15rem}
 .msg.them{align-self:flex-start;background:#1a1a2e;border:1px solid #27272a}
 .msg.me{align-self:flex-end;background:linear-gradient(135deg,#7c3aed,#0891b2);color:#fff}
+.msg.pm{border:1px dashed #ec4899}
+.msg.pm .who{color:#ec4899}
+.vbadge.adm{background:rgba(251,191,36,.18);color:#fbbf24}
+.cmd-hint{padding:.3rem 1rem;font-size:.64rem;color:#71717a;background:#0d1117;border-top:1px solid #27272a;text-align:center}
 .msg .who{font-size:.66rem;font-weight:800;color:#a855f7}
 .msg.me .who{color:#e9d5ff}
 .msg .txt{word-break:break-word;white-space:pre-wrap}
@@ -91,6 +96,7 @@ Login and Join</button>
 <button onclick="leaveChat()">Exit</button>
 </div>
 <div id="msgs"></div>
+<div class="cmd-hint">commands: /pm "username" pesan  |  admin: /kick "username"</div>
 <form class="chat-input" id="chatForm">
 <input id="msgInput" autocomplete="off" placeholder="Ketik pesan..." maxlength="500">
 <button type="submit">Send</button>
@@ -160,7 +166,7 @@ function connectWS(){
     setInterval(updateOnline, 5000);
   };
   ws.onmessage = function(e){
-    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else { hideTyping(); addMsg(mm); } } catch(err){}
+    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else { hideTyping(); addMsg(mm); } } catch(err){}
   };
   ws.onclose = function(){
     if(allowReconnect){
@@ -185,12 +191,25 @@ var typingTimer = null, lastTypingSent = 0;
 function showTyping(who){ var el = document.getElementById("typingInd"); el.textContent = who + " is typing..."; clearTimeout(typingTimer); typingTimer = setTimeout(function(){ el.textContent = ""; }, 2500); }
 function hideTyping(){ document.getElementById("typingInd").textContent = ""; }
 function sendTyping(){ var n = Date.now(); if(ws && ws.readyState === 1 && n - lastTypingSent > 1500){ lastTypingSent = n; ws.send(JSON.stringify({type:"typing"})); } }
+function addPM(m){
+  var box=document.getElementById('msgs');
+  var div=document.createElement('div');
+  var mine = (m.from === myName);
+  div.className='msg pm ' + (mine?'me':'them');
+  var who=document.createElement('span'); who.className='who';
+  who.textContent = mine ? ('PM to @' + m.to) : ('PM from @' + m.from);
+  var txt=document.createElement('span'); txt.className='txt'; txt.textContent=m.text;
+  var t=document.createElement('span'); t.className='t'; t.textContent=m.time||'';
+  div.appendChild(who); div.appendChild(txt); div.appendChild(t);
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
 function addMsg(m){
   var box=document.getElementById('msgs');
   var div=document.createElement('div');
   if(m.type==='message'){
     div.className='msg '+(m.from===myName?'me':'them');
-    var who=document.createElement('span'); who.className='who'; who.textContent=m.from; if(m.verified){ var vb=document.createElement('span'); vb.className='vbadge'; vb.textContent='verified'; who.appendChild(vb); }
+    var who=document.createElement('span'); who.className='who'; who.textContent=m.from; if(m.verified){ var vb=document.createElement('span'); vb.className='vbadge'; vb.textContent='verified'; who.appendChild(vb); } if(m.admin){ var ab=document.createElement('span'); ab.className='vbadge adm'; ab.textContent='admin'; who.appendChild(ab); }
     var txt=document.createElement('span'); txt.className='txt'; txt.textContent=m.text;
     var t=document.createElement('span'); t.className='t'; t.textContent=m.time||'';
     div.appendChild(who); div.appendChild(txt); div.appendChild(t);
@@ -239,7 +258,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.2.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.3.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -272,7 +291,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.2.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.3.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -298,13 +317,16 @@ return
 }
 
 send := make(chan []byte, 32)
+	done := make(chan struct{})
 verified := false
+	isAdmin := false
 	if tok := strings.TrimSpace(c.Query("token")); tok != "" {
 		if claims, err := auth.ValidateToken(tok, jwtSecret); err == nil {
 			verified = true
 			if claims.Name != "" {
 				name = claims.Name
 			}
+			isAdmin = isAdminEmail(claims.Email)
 			log.Printf("[nexchat] verified user: %s (%s)", name, claims.Email)
 		} else {
 			log.Printf("[nexchat] invalid token: %v", err)
@@ -312,6 +334,7 @@ verified := false
 	}
 	client := hub.Join(name, room, send)
 	client.Verified = verified
+	client.IsAdmin = isAdmin
 log.Printf("[nexchat] %s joined #%s (online: %d)", name, room, hub.Online(room))
 
 // write pump + keepalive ping (menjaga koneksi di balik proxy Railway)
@@ -327,11 +350,21 @@ conn.WriteMessage(websocket.CloseMessage, []byte{})
 conn.Close()
 return
 }
-if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+if bytes.HasPrefix(msg, []byte("__KICK__")) {
+	reason := string(msg[8:])
+	kb, _ := json.Marshal(map[string]string{"type": "kick", "reason": reason})
+	conn.WriteMessage(websocket.TextMessage, kb)
+	conn.Close()
+	return
+	}
+	if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 conn.Close()
 return
 }
-case <-ticker.C:
+case <-done:
+			conn.Close()
+			return
+		case <-ticker.C:
 conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 conn.Close()
@@ -364,7 +397,7 @@ handleClientMessage(client, text)
 }
 
 hub.Leave(client)
-close(send)
+close(done)
 log.Printf("[nexchat] %s left #%s", name, room)
 }
 func handleClientMessage(c *chat.Client, raw string) {
@@ -388,7 +421,36 @@ return
 if len(raw) > 500 {
 raw = raw[:500]
 }
-hub.Broadcast(c, raw)
+if strings.HasPrefix(raw, "/pm ") {
+		toName, pmText := parsePM(raw[4:])
+		if toName != "" && pmText != "" {
+			if hub.SendPM(c, toName, pmText) {
+				return
+			}
+			hub.NotifyClient(c, "user not found or offline: "+toName)
+			return
+		}
+		hub.NotifyClient(c, "usage: /pm \"username\" message")
+		return
+	}
+	if strings.HasPrefix(raw, "/kick ") {
+		target := strings.Trim(strings.TrimSpace(raw[6:]), "\"")
+		if !c.IsAdmin {
+			hub.NotifyClient(c, "only admin can use /kick")
+			return
+		}
+		if target == c.Name {
+			hub.NotifyClient(c, "cannot kick yourself")
+			return
+		}
+		if hub.Kick(target, "kicked by "+c.Name) {
+			hub.BroadcastSystem(c.Room, target+" was kicked by "+c.Name)
+		} else {
+			hub.NotifyClient(c, "user not found: "+target)
+		}
+		return
+	}
+	hub.Broadcast(c, raw)
 }
 
 func historyOrLoad(room string) []chat.Message {
@@ -403,4 +465,33 @@ if s := os.Getenv("JWT_SECRET"); s != "" {
 return s
 }
 return "nexrouter-dev-secret-change-me"
+}
+func isAdminEmail(email string) bool {
+list := os.Getenv("ADMIN_EMAILS")
+if list == "" {
+return false
+}
+for _, a := range strings.Split(list, ",") {
+if strings.EqualFold(strings.TrimSpace(a), email) {
+return true
+}
+}
+return false
+}
+
+// parsePM: support  "John Doe" hello  maupun  Budi hello
+func parsePM(rest string) (string, string) {
+rest = strings.TrimSpace(rest)
+if strings.HasPrefix(rest, "\"") {
+end := strings.Index(rest[1:], "\"")
+if end > 0 {
+return rest[1 : 1+end], strings.TrimSpace(rest[end+2:])
+}
+return "", ""
+}
+parts := strings.SplitN(rest, " ", 2)
+if len(parts) == 2 {
+return parts[0], strings.TrimSpace(parts[1])
+}
+return "", ""
 }
