@@ -102,7 +102,7 @@ Login and Join</button>
 <button onclick="leaveChat()">Exit</button>
 </div>
 <div id="msgs"></div>
-<div class="cmd-hint">commands: /pm "username" pesan  |  admin: /kick "username"</div>
+<div class="cmd-hint">commands: /pm "username" pesan | /history "username" | admin: /kick "username"</div>
 <form class="chat-input" id="chatForm">
 <input id="msgInput" autocomplete="off" placeholder="Ketik pesan..." maxlength="500">
 <button type="submit">Send</button>
@@ -172,7 +172,7 @@ function connectWS(){
     setInterval(updateOnline, 5000);
   };
   ws.onmessage = function(e){
-    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else if(mm.type === 'react'){ renderReactions(mm.msg_id, mm.reactions); } else { hideTyping(); addMsg(mm); } } catch(err){}
+    try { var mm = JSON.parse(e.data); if(mm.type === 'typing'){ showTyping(mm.from); } else if(mm.type === 'kick'){ allowReconnect = false; alert('Anda di-kick: ' + (mm.reason || '')); location.reload(); } else if(mm.type === 'pm'){ hideTyping(); addPM(mm); } else if(mm.type === 'react'){ renderReactions(mm.msg_id, mm.reactions); } else if(mm.type === 'dm_history'){ renderDMHistory(mm); } else { hideTyping(); addMsg(mm); } } catch(err){}
   };
   ws.onclose = function(){
     if(allowReconnect){
@@ -235,6 +235,11 @@ function hidePickerOnce(){ hidePicker(); document.removeEventListener('click', h
 function hidePicker(){
   if(rxPicker && rxPicker.parentNode){ rxPicker.parentNode.removeChild(rxPicker); }
   rxPicker = null;
+}
+function renderDMHistory(mm){
+  var msgs = mm.messages || [];
+  addMsg({type:'system', text:'--- DM history with @' + mm['with'] + ' (' + msgs.length + ' pesan tersimpan) ---', time:''});
+  for(var i=0; i<msgs.length; i++){ addPM(msgs[i]); }
 }
 function renderReactions(msgId, reactions){
   var bubbles = document.querySelectorAll('[data-msgid="' + msgId + '"]');
@@ -311,7 +316,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.4.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.5.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -344,7 +349,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.4.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.5.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -483,13 +488,33 @@ return
 if len(raw) > 500 {
 raw = raw[:500]
 }
-if strings.HasPrefix(raw, "/pm ") {
+if strings.HasPrefix(raw, "/history ") {
+		target := strings.Trim(strings.TrimSpace(raw[9:]), "\"")
+		if target == "" {
+			hub.NotifyClient(c, "usage: /history username")
+			return
+		}
+		msgs := chat.DMHistory(c.Name, target, 50)
+		payload := map[string]interface{}{"type": "dm_history", "with": target, "messages": msgs}
+		if b, err := json.Marshal(payload); err == nil {
+			select {
+			case c.Send <- b:
+			default:
+			}
+		}
+		return
+	}
+	if strings.HasPrefix(raw, "/pm ") {
 		toName, pmText := parsePM(raw[4:])
 		if toName != "" && pmText != "" {
+			if toName == c.Name {
+				hub.NotifyClient(c, "cannot PM yourself")
+				return
+			}
 			if hub.SendPM(c, toName, pmText) {
 				return
 			}
-			hub.NotifyClient(c, "user not found or offline: "+toName)
+			hub.NotifyClient(c, "saved - "+toName+" sedang offline; dia bisa baca via /history")
 			return
 		}
 		hub.NotifyClient(c, "usage: /pm \"username\" message")

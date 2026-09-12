@@ -40,33 +40,45 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room, id);
 `)
+if err != nil {
 return err
 }
+// v1.5 migration: kolom recipient untuk DM (idempotent)
+var colCount int
+qerr := DB.QueryRow("SELECT COUNT(*) FROM pragma_table_info('messages') WHERE name = 'recipient'").Scan(&colCount)
+if qerr == nil && colCount == 0 {
+if _, aerr := DB.Exec("ALTER TABLE messages ADD COLUMN recipient TEXT NOT NULL DEFAULT ''"); aerr != nil {
+return aerr
+}
+log.Printf("[nexchat] migration: kolom recipient ditambahkan")
+}
+return nil
+}
 
-// SaveMessage persists one chat message (called async via go)
+// SaveMessage persists chat messages AND private messages
 func SaveMessage(m Message) {
 if DB == nil {
 return
 }
-if m.Type != "message" {
+if m.Type != "message" && m.Type != "pm" {
 return
 }
 _, err := DB.Exec(
-"INSERT INTO messages (room, sender, mtype, text) VALUES (?, ?, ?, ?)",
-m.Room, m.From, m.Type, m.Text,
+"INSERT INTO messages (room, sender, mtype, text, recipient) VALUES (?, ?, ?, ?, ?)",
+m.Room, m.From, m.Type, m.Text, m.To,
 )
 if err != nil {
 log.Printf("[nexchat] save message failed: %v", err)
 }
 }
 
-// LoadHistory loads persisted history for a room (chronological order)
+// LoadHistory loads persisted history for a room OR dm key (chronological)
 func LoadHistory(room string, limit int) []Message {
 if DB == nil {
 return nil
 }
 rows, err := DB.Query(
-"SELECT id, sender, text, strftime('%H:%M:%S', created_at) FROM messages WHERE room = ? ORDER BY id DESC LIMIT ?",
+"SELECT id, sender, text, strftime('%H:%M:%S', created_at), mtype, recipient FROM messages WHERE room = ? ORDER BY id DESC LIMIT ?",
 room, limit,
 )
 if err != nil {
@@ -76,10 +88,9 @@ defer rows.Close()
 var rev []Message
 for rows.Next() {
 var m Message
-if err := rows.Scan(&m.ID, &m.From, &m.Text, &m.Time); err != nil {
+if err := rows.Scan(&m.ID, &m.From, &m.Text, &m.Time, &m.Type, &m.To); err != nil {
 continue
 }
-m.Type = "message"
 m.Room = room
 rev = append(rev, m)
 }

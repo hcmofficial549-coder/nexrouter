@@ -1,7 +1,6 @@
 package chat
 
 // FindClient mencari client online by exact name (first match).
-// Catatan: nama duplikat mungkin; PM pergi ke yang pertama ketemu.
 func (h *Hub) FindClient(name string) *Client {
 h.mu.RLock()
 defer h.mu.RUnlock()
@@ -15,11 +14,11 @@ return c
 return nil
 }
 
-// SendPM mengirim private message ke target (dan echo ke pengirim).
-// PM bersifat ephemeral: tidak disimpan di history, tidak persisten.
+// SendPM mengirim private message.
+// v1.5: SELALU dipersist ke SQLite (async messaging).
+// Return true jika target online dan pesan terkirim live.
 func (h *Hub) SendPM(from *Client, toName, text string) bool {
-target := h.FindClient(toName)
-if target == nil || target == from {
+if toName == from.Name {
 return false
 }
 m := Message{
@@ -31,12 +30,25 @@ Time:     nowStr(),
 Verified: from.Verified,
 Admin:    from.IsAdmin,
 }
+m.Room = DMKey(from.Name, toName)
+go SaveMessage(m)
+
 b := m.bytes()
-for _, t := range []*Client{target, from} {
+
+// echo ke pengirim (selalu)
 select {
-case t.Send <- b:
+case from.Send <- b:
 default:
 }
+
+// delivery live jika target online
+target := h.FindClient(toName)
+if target == nil {
+return false
+}
+select {
+case target.Send <- b:
+default:
 }
 return true
 }
@@ -56,8 +68,7 @@ h.store(Message{Type: "system", From: "system", Room: room, Text: text, Time: no
 }
 
 // Kick mengirim control frame __KICK__ ke target.
-// Write pump target yang menutup koneksi; read pump-nya sendiri
-// yang cleanup (channel ownership: hanya pemilik yang close).
+// Write pump target yang menutup koneksi (channel ownership aman).
 func (h *Hub) Kick(name, reason string) bool {
 target := h.FindClient(name)
 if target == nil {
