@@ -8,7 +8,6 @@ Custom high-performance HTTP router for Go - built from scratch, production-depl
 
 - Dashboard: https://nexrouter.up.railway.app/dashboard
 - API Docs: https://nexrouter.up.railway.app/docs
-- API Docs: https://nexrouter.up.railway.app/docs
 - API Health: https://nexrouter.up.railway.app/health
 - Demo login: john@example.com / password123
 - Live Monitor: https://nexrouter.up.railway.app/monitor
