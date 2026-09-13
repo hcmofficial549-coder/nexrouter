@@ -11,6 +11,8 @@ Custom high-performance HTTP router for Go - built from scratch, production-depl
 - API Docs: https://nexrouter.up.railway.app/docs
 - API Health: https://nexrouter.up.railway.app/health
 - Demo login: john@example.com / password123
+- Live Monitor: https://nexrouter.up.railway.app/monitor
+- Chat App: https://nexchat-production.up.railway.app
 
 ## Features
 
@@ -26,7 +28,3 @@ Custom high-performance HTTP router for Go - built from scratch, production-depl
 - Auto-deploy: git push triggers Railway deployment
 
 ## Quick Start
-
-
-  
-  
