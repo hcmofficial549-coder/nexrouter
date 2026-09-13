@@ -107,3 +107,13 @@ if DB != nil {
 DB.Close()
 }
 }
+
+// DeleteMessage removes a message from the database by ID.
+// Returns true if a row was actually deleted.
+func DeleteMessage(id int64) bool {
+if DB == nil { return false }
+res, err := DB.Exec("DELETE FROM messages WHERE id = ?", id)
+if err != nil { return false }
+n, _ := res.RowsAffected()
+return n > 0
+}

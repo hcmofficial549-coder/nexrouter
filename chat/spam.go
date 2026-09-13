@@ -75,3 +75,12 @@ delete(s.buckets, c)
 delete(s.strikes, c)
 delete(s.mutedTil, c)
 }
+
+// Unmute forcibly removes a mute on a client and resets their strikes.
+func (s *SpamGuard) Unmute(c *Client) {
+s.mu.Lock()
+defer s.mu.Unlock()
+delete(s.mutedTil, c)
+delete(s.strikes, c)
+delete(s.buckets, c)
+}

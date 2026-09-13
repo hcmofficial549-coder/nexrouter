@@ -91,6 +91,8 @@ body.sb-on{padding-left:200px}
 .sb-newroom:hover{border-color:#06b6d4;color:#06b6d4}
 .sb-foot{margin-top:1rem;padding:.5rem .3rem;border-top:1px solid #27272a;font-size:.7rem;color:#71717a}
 @media(max-width:640px){body.sb-on{padding-left:0}.sidebar{display:none}}
+.btn-del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:.7rem;padding:0 4px;opacity:0.6;margin-left:4px}
+.btn-del:hover{opacity:1}
 .msg .who{font-size:.66rem;font-weight:800;color:#a855f7}
 .msg.me .who{color:#e9d5ff}
 .msg .txt{word-break:break-word;white-space:pre-wrap}
@@ -238,7 +240,7 @@ function addPM(m){
   who.textContent = mine ? ('PM to @' + m.to) : ('PM from @' + m.from);
   var txt=document.createElement('span'); txt.className='txt'; txt.textContent=m.text;
   var t=document.createElement('span'); t.className='t'; t.textContent=m.time||'';
-  div.appendChild(who); div.appendChild(txt); div.appendChild(t); if(m.id){ div.dataset.msgid = m.id; div.style.position='relative'; div.onclick = function(){ showPicker(m.id, div); }; }
+  div.appendChild(who); div.appendChild(txt); div.appendChild(t); if(m.id){ div.dataset.msgid = m.id; div.style.position='relative'; div.onclick = function(e){ if(!e.target.classList.contains('btn-del')){ showPicker(m.id, div); } }; if(m.from === myName){ var db = document.createElement('button'); db.className='btn-del'; db.innerHTML='\uD83D\uDDD1\uFE0F'; db.title='Delete'; db.onclick = (function(mid){ return function(ev){ ev.stopPropagation(); if(confirm('Hapus?')){ ws.send(JSON.stringify({type:'chat', text:'/delete '+mid})); } }; })(m.id); who.appendChild(db); } }
   box.appendChild(div);
   box.scrollTop=box.scrollHeight;
 }
@@ -323,6 +325,7 @@ function newRoom(){
   switchRoom(name);
 }
 var dmTarget = null;
+var myAdmin = false;
 function sendDMList(){ if(ws && ws.readyState === 1){ ws.send(JSON.stringify({type:'dm_list'})); } }
 function renderDMs(threads){
   var el = document.getElementById('dmList');
@@ -388,6 +391,15 @@ function updateRooms(){
     renderRooms(rooms);
   }).catch(function(){});
 }
+function removeMsg(id){
+  var els = document.querySelectorAll('[data-msgid="' + id + '"]');
+  for(var i=0; i<els.length; i++){
+    els[i].style.opacity = '0.3';
+    els[i].style.textDecoration = 'line-through';
+    setTimeout((function(el){ return function(){ el.remove(); }; })(els[i]), 500);
+  }
+}
+
 function addMsg(m){
   var box=document.getElementById('msgs');
   var div=document.createElement('div');
@@ -396,7 +408,7 @@ function addMsg(m){
     var who=document.createElement('span'); who.className='who'; who.textContent=m.from; if(m.verified){ var vb=document.createElement('span'); vb.className='vbadge'; vb.textContent='verified'; who.appendChild(vb); } if(m.admin){ var ab=document.createElement('span'); ab.className='vbadge adm'; ab.textContent='admin'; who.appendChild(ab); }
     var txt=document.createElement('span'); txt.className='txt'; txt.textContent=m.text;
     var t=document.createElement('span'); t.className='t'; t.textContent=m.time||'';
-    div.appendChild(who); div.appendChild(txt); div.appendChild(t); if(m.id){ div.dataset.msgid = m.id; div.style.position='relative'; div.onclick = function(){ showPicker(m.id, div); }; }
+    div.appendChild(who); div.appendChild(txt); div.appendChild(t); if(m.id){ div.dataset.msgid = m.id; div.style.position='relative'; div.onclick = function(e){ if(!e.target.classList.contains('btn-del')){ showPicker(m.id, div); } }; if(m.from === myName){ var db = document.createElement('button'); db.className='btn-del'; db.innerHTML='\uD83D\uDDD1\uFE0F'; db.title='Delete'; db.onclick = (function(mid){ return function(ev){ ev.stopPropagation(); if(confirm('Hapus?')){ ws.send(JSON.stringify({type:'chat', text:'/delete '+mid})); } }; })(m.id); who.appendChild(db); } }
   } else {
     div.className='sys';
     div.textContent=(m.time?('['+m.time+'] '):'')+(m.text||'');
@@ -443,7 +455,7 @@ r.Use(middleware.Recovery())
 r.Use(middleware.CORS())
 
 r.GET("/health", func(c *core.Context) {
-c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.8.0"})
+c.JSON(http.StatusOK, core.H{"status": "ok", "app": "nexchat", "version": "1.9.0"})
 })
 
 r.GET("/", func(c *core.Context) {
@@ -476,7 +488,7 @@ port := os.Getenv("PORT")
 if port == "" {
 port = "8081"
 }
-log.Printf("[nexchat] v1.8.0 starting on :%s (powered by nexrouter!)", port)
+log.Printf("[nexchat] v1.9.0 starting on :%s (powered by nexrouter!)", port)
 if err := r.Run(":" + port); err != nil {
 log.Fatal(err)
 }
@@ -652,6 +664,40 @@ raw = raw[:500]
 }
 if ok, mutedSec := spamGuard.Allow(c); !ok {
 		hub.NotifyClient(c, "slow down! muted "+strconv.Itoa(mutedSec)+"s (anti-spam)")
+		return
+	}
+	if strings.HasPrefix(raw, "/unmute ") {
+		if !c.IsAdmin {
+			hub.NotifyClient(c, "only admin can unmute")
+			return
+		}
+		targetName := strings.Trim(strings.TrimSpace(raw[8:]), "\"")
+		target := hub.FindClient(targetName)
+		if target == nil {
+			hub.NotifyClient(c, "user not found or offline: "+targetName)
+			return
+		}
+		spamGuard.Unmute(target)
+		hub.NotifyClient(c, targetName+" has been unmuted")
+		hub.BroadcastSystem(c.Room, targetName+" was unmuted by "+c.Name)
+		return
+	}
+	if strings.HasPrefix(raw, "/delete ") {
+		idStr := strings.TrimSpace(raw[8:])
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			hub.NotifyClient(c, "invalid message ID")
+			return
+		}
+		if chat.DeleteMessage(id) {
+			payload := map[string]interface{}{"type": "msg_deleted", "id": id}
+			if b, err := json.Marshal(payload); err == nil {
+				// Using BroadcastJSON
+				
+			}
+		} else {
+			hub.NotifyClient(c, "message not found")
+		}
 		return
 	}
 	if strings.HasPrefix(raw, "/history ") {

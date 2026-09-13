@@ -154,3 +154,18 @@ h.mu.RLock()
 defer h.mu.RUnlock()
 return len(h.rooms[room])
 }
+
+// BroadcastJSON sends a JSON payload to all clients in a specific room.
+func (h *Hub) BroadcastJSON(room string, payload interface{}) {
+b, err := json.Marshal(payload)
+if err != nil { return }
+h.mu.RLock()
+clients := h.rooms[room]
+for c := range clients {
+select {
+case c.Send <- b:
+default:
+}
+}
+h.mu.RUnlock()
+}
