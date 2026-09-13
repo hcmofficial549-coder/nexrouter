@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 "bytes"
@@ -691,7 +691,7 @@ if ok, mutedSec := spamGuard.Allow(c); !ok {
 		}
 		if chat.DeleteMessage(id) {
 			payload := map[string]interface{}{"type": "msg_deleted", "id": id}
-			if b, err := json.Marshal(payload); err == nil {
+			if _,  err := json.Marshal(payload); err == nil {
 				// Using BroadcastJSON
 				
 			}
